@@ -1,0 +1,28 @@
+# The local database. Stock postgres — Agora needs no extensions beyond
+# pgcrypto, which ships in the base image.
+#
+# This is only for development and small self-hosted installs; point
+# DATABASE_URL at a managed Postgres instead if you have one.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agora
+      POSTGRES_PASSWORD: agora
+      POSTGRES_DB: agora
+    ports:
+      # Bound to loopback: an unauthenticated Postgres should never be reachable
+      # from the network, and the default `5432:5432` would publish it on every
+      # interface, punching through a host firewall on some Docker setups.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - agora-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agora -d agora"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  agora-db:
