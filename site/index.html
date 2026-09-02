@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agora — a kanban board for humans and coding agents</title>
+    <meta
+      name="description"
+      content="An open-source kanban board where cards carry a PR link, an automerge flag and a review gate, and a dependency graph decides what is actually workable next. MIT, self-hosted, one Postgres database."
+    />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0a0a0a" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Agora" />
+    <meta property="og:url" content="https://aisocratic.github.io/agora/" />
+    <meta property="og:title" content="Agora — a kanban board for humans and coding agents" />
+    <meta
+      property="og:description"
+      content="Cards carry a PR link, an automerge flag and a review gate. A dependency graph computes waves of genuinely-unblocked work, so an agent can ask the board what to do next. MIT, self-hosted, one Postgres database."
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Agora — a kanban board for humans and coding agents" />
+    <meta
+      name="twitter:description"
+      content="Cards carry a PR link, an automerge flag and a review gate. A dependency graph computes waves of genuinely-unblocked work."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Newsreader:ital,opsz,wght@0,6..72,200;1,6..72,200&family=Space+Grotesk:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-head">
+      <div class="wrap head-inner">
+        <a class="wordmark" href="./">Agora</a>
+        <nav class="head-nav" aria-label="Sections">
+          <a href="#why">Why</a>
+          <a href="#agents">Agents</a>
+          <a href="#dispatch">Dispatch</a>
+          <a href="#security">Security</a>
+          <a href="#roadmap">Roadmap</a>
+        </nav>
+        <a class="head-repo" href="https://github.com/aisocratic/agora">GitHub<span aria-hidden="true"> ↗</span></a>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ------------------------------------------------------------ hero -->
+      <section class="hero">
+        <div class="wrap hero-inner">
+          <div class="hero-copy">
+            <p class="eyebrow">
+              <span class="pill pill-accent">Early — not yet ready to run</span>
+            </p>
+
+            <h1 class="hero-title">
+              A kanban board built for<br />
+              humans <em>and</em> coding agents.
+            </h1>
+
+            <p class="lede">
+              Most boards assume a person moves every card. Agora assumes some of the work is done by
+              coding agents, and makes that a first-class part of the model: a card carries a PR
+              link, an automerge flag, a review verdict, and its own model, effort and harness
+              policy. A dependency graph decides what is actually workable right now, so an agent can
+              ask the board what to do next instead of guessing.
+            </p>
+
+            <p class="lede lede-quiet">
+              Turn the agent half off with one config flag and you have a fast, keyboard-driven
+              kanban board for people.
+            </p>
+
+            <figure class="code" data-copy>
+              <figcaption class="code-head"><span class="code-label">Quick start</span></figcaption>
+              <pre><code><span class="c-cmd">git</span> clone https://github.com/aisocratic/agora <span class="c-op">&amp;&amp;</span> <span class="c-cmd">cd</span> agora
+<span class="c-cmd">pnpm</span> install
+<span class="c-cmd">docker</span> compose up -d db        <span class="c-comment"># or set DATABASE_URL to any Postgres 14+</span>
+<span class="c-cmd">pnpm</span> setup                     <span class="c-comment"># writes .env.local, migrates, seeds a demo board</span>
+<span class="c-cmd">pnpm</span> dev</code></pre>
+            </figure>
+
+            <p class="hero-actions">
+              <a class="btn btn-primary" href="https://github.com/aisocratic/agora">View on GitHub</a>
+              <a class="btn" href="#agents">How agents use it</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------ board mock -->
+      <section class="board-band">
+        <div class="wrap board-figure">
+          <figure class="board" aria-labelledby="board-cap">
+            <div class="board-chrome" aria-hidden="true">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="board-chrome-label">agora · board</span>
+              <span class="board-chrome-hint">scroll →</span>
+            </div>
+
+            <div class="board-scroll">
+              <div class="board-cols">
+                <section class="col">
+                  <h3 class="col-head">Backlog <span class="col-count">2</span></h3>
+
+                  <article class="mock-card">
+                    <p class="mc-title">Import an existing <code>todos</code> table</p>
+                    <p class="mc-meta"><span class="chip chip-id">AG-30</span><span class="chip">epic</span></p>
+                  </article>
+
+                  <article class="mock-card">
+                    <p class="mc-title">Suggestions inbox: agents propose, humans dispose</p>
+                    <p class="mc-meta"><span class="chip chip-id">AG-33</span><span class="chip">epic</span></p>
+                  </article>
+                </section>
+
+                <section class="col">
+                  <h3 class="col-head">Todo <span class="col-count">2</span></h3>
+
+                  <article class="mock-card">
+                    <p class="mc-title">Wave scheduler over <code>Todo[]</code></p>
+                    <p class="mc-meta">
+                      <span class="chip chip-id">AG-41</span>
+                      <span class="chip chip-policy">opus · mid</span>
+                    </p>
+                  </article>
+
+                  <div class="dep" aria-hidden="true"><span class="dep-line"></span></div>
+
+                  <article class="mock-card is-blocked">
+                    <p class="mc-title">Dependency graph view</p>
+                    <p class="mc-meta">
+                      <span class="chip chip-id">AG-51</span>
+                      <span class="chip chip-blocked">blocked by AG-41</span>
+                    </p>
+                  </article>
+                </section>
+
+                <section class="col">
+                  <h3 class="col-head">Doing <span class="col-count">2</span></h3>
+
+                  <article class="mock-card">
+                    <p class="mc-title">Webhook adapter: HMAC over the raw body</p>
+                    <p class="mc-meta">
+                      <span class="chip chip-id">AG-44</span>
+                      <span class="chip chip-policy">sonnet · mid</span>
+                    </p>
+                  </article>
+
+                  <article class="mock-card">
+                    <p class="mc-title"><code>command</code> adapter: execFile, never a shell</p>
+                    <p class="mc-meta">
+                      <span class="chip chip-id">AG-47</span>
+                      <span class="chip chip-gate">needs review</span>
+                    </p>
+                  </article>
+                </section>
+
+                <section class="col">
+                  <h3 class="col-head">Review <span class="col-count">2</span></h3>
+
+                  <article class="mock-card">
+                    <p class="mc-title">Board version: one query, ETag, 304</p>
+                    <p class="mc-meta">
+                      <span class="chip chip-pr">PR #112</span>
+                      <span class="chip chip-merge">automerge</span>
+                    </p>
+                  </article>
+
+                  <article class="mock-card">
+                    <p class="mc-title">Config-driven effort and model vocabulary</p>
+                    <p class="mc-meta">
+                      <span class="chip chip-pr">PR #109</span>
+                      <span class="chip chip-gate">needs review</span>
+                    </p>
+                  </article>
+                </section>
+              </div>
+            </div>
+
+            <figcaption id="board-cap" class="board-cap">
+              The gate and the merge flag are separate questions. A card can be waiting for a human
+              to look at it before work starts, or cleared to merge itself when the checks go
+              green — never conflated.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------------- why -->
+      <section id="why" class="band">
+        <div class="wrap">
+          <h2 class="section-title">Why it exists</h2>
+
+          <div class="grid-2">
+            <article class="point">
+              <h3>The dependency graph is the point.</h3>
+              <p>
+                Cards declare prerequisites. Agora computes waves of genuinely-unblocked work, so
+                parallel agents don't collide and nothing starts before what it depends on is real.
+              </p>
+            </article>
+
+            <article class="point">
+              <h3>Review is a gate, not a column.</h3>
+              <p>
+                <code>needs_human_review</code> blocks work <em>before</em> it starts;
+                <code>automerge</code> governs only the merge at the end. The two are deliberately
+                separate, because "I want to look at this first" and "you may merge this without me"
+                are different questions.
+              </p>
+            </article>
+
+            <article class="point">
+              <h3>Agents get an API and a CLI, not a scraper.</h3>
+              <p>
+                Everything the web UI does is a documented HTTP endpoint with token auth.
+                <code>npx agora board</code> returns the plan as JSON.
+              </p>
+            </article>
+
+            <article class="point">
+              <h3>You own the data.</h3>
+              <p>
+                One Postgres database, plain SQL, no ORM, no vendor. The queries are SQL you can
+                paste into <code>psql</code>.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------------------------------------------------- agents -->
+      <section id="agents" class="band band-alt">
+        <div class="wrap">
+          <h2 class="section-title">How agents use it</h2>
+          <p class="section-lede">
+            The CLI is an HTTP client, never a database client — it needs a token and a URL, not
+            Postgres credentials. It ships as a single dependency-free file, so
+            <code>npx agora</code> works in any repo without a clone.
+          </p>
+
+          <div class="split">
+            <div class="split-col">
+            <figure class="code" data-copy>
+              <figcaption class="code-head"><span class="code-label">The loop</span></figcaption>
+              <pre><code><span class="c-cmd">npx</span> agora login --url https://board.example.com
+<span class="c-cmd">npx</span> agora board --json     <span class="c-comment"># ready, in dep order</span>
+<span class="c-cmd">npx</span> agora get AG-41        <span class="c-comment"># card, comments, deps</span>
+<span class="c-cmd">npx</span> agora comment AG-41 --author claude &lt; notes.md
+<span class="c-cmd">npx</span> agora move AG-41 review</code></pre>
+            </figure>
+
+              <p class="note note-tight">
+                <code>agora skill install</code> drops a Claude Code skill into your project that
+                teaches an agent the whole loop — pick a card, work it, open a PR, respect the review
+                gate. Epics are containers; only leaf tasks are units of work. Cards a human has
+                assigned to themselves are never touched, and they still block their dependents.
+              </p>
+            </div>
+
+            <figure class="code code-json" data-copy>
+              <figcaption class="code-head">
+                <span class="code-label">agora board --json</span>
+              </figcaption>
+              <pre><code class="language-json">{
+  "readyToMerge": [
+    { "id": "AG-38", "automerge": true,
+      "title": "Board version: one query, ETag, 304",
+      "pr_url": "https://github.com/aisocratic/agora/pull/112" }
+  ],
+  "waves": [
+    [ { "id": "AG-41", "effort": "mid", "model": "opus",
+        "title": "Wave scheduler over Todo[]" },
+      { "id": "AG-44", "effort": "mid", "model": "sonnet",
+        "title": "Webhook adapter: HMAC the raw body" } ],
+    [ { "id": "AG-45", "depends_on": ["AG-44"],
+        "title": "github-workflow preset" } ]
+  ],
+  "blocked": [
+    { "id": "AG-51", "blockedBy": ["AG-41"],
+      "title": "Dependency graph view" }
+  ],
+  "needsBreakdown": [
+    { "id": "AG-33", "type": "epic",
+      "title": "Suggestions inbox",
+      "reason": "no leaf tasks" }
+  ],
+  "humanAssigned": [
+    { "id": "AG-22", "assignee": "fed",
+      "title": "Pick the demo hostname" }
+  ],
+  "gated": [
+    { "id": "AG-47", "needs_human_review": true,
+      "title": "command adapter: execFile, never a shell" }
+  ]
+}</code></pre>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------- dispatch -->
+      <section id="dispatch" class="band">
+        <div class="wrap">
+          <h2 class="section-title">Dispatching</h2>
+          <p class="section-lede">
+            Agora does not run agents. It tells something else to, through one small adapter
+            interface.
+          </p>
+
+          <div class="table-scroll">
+            <table class="table">
+              <caption class="sr-only">Dispatch adapters and what each one does</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Adapter</th>
+                  <th scope="col">What it does</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row"><code>none</code></th>
+                  <td>Default — no dispatch, a purely human board.</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>webhook</code></th>
+                  <td>POSTs the card and its context to a URL you control, HMAC-signed.</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>command</code></th>
+                  <td>Runs a process on the server. Opt-in, because it executes code.</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>github-workflow</code></th>
+                  <td>Triggers a <code>workflow_dispatch</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="note">
+            Claude Code and Codex ship as ~15-line examples in <code>examples/dispatch/</code>, not
+            as built-in adapters — vendor CLI flags churn faster than releases.
+          </p>
+
+          <h3 class="sub-title">Configuration</h3>
+          <p class="prose">
+            <code>agora.config.ts</code> at the repo root holds the column and type labels, the
+            people who can be assigned, whether the agent half is enabled, and the values your
+            <code>effort</code> / <code>model</code> / <code>harness</code> fields accept. Changing
+            that vocabulary never requires a migration.
+          </p>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------- security -->
+      <section id="security" class="band band-alt">
+        <div class="wrap">
+          <h2 class="section-title">Security model</h2>
+
+          <div class="callout">
+            <p class="prose">
+              Agora's trust boundary is <strong>the database and the deployment</strong>, not an
+              in-app permission system. There are no user accounts and no roles: anyone who can
+              reach the board can edit the board. Assignees are free text.
+            </p>
+            <p class="prose">
+              That is a deliberate choice, not an omission. Adding roles without an identity
+              provider is security theatre. Run it on localhost, behind Tailscale, or behind a proxy
+              that authenticates for you (<code>AGORA_AUTH=proxy</code>), or set a shared password
+              (<code>AGORA_AUTH=password</code>). Machine clients use bearer tokens.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- --------------------------------------------------------- roadmap -->
+      <section id="roadmap" class="band">
+        <div class="wrap">
+          <h2 class="section-title">Roadmap</h2>
+
+          <ol class="roadmap">
+            <li class="done">
+              <span class="rm-mark" aria-hidden="true"></span>
+              <span class="rm-phase">Phase 0</span>
+              <span class="rm-text">Scaffold, design substrate, fonts</span>
+              <span class="pill pill-quiet">Done</span>
+            </li>
+            <li>
+              <span class="rm-mark" aria-hidden="true"></span>
+              <span class="rm-phase">Phase 1</span>
+              <span class="rm-text">
+                The board on Postgres: columns, drag and drop, card editor, live refresh
+              </span>
+            </li>
+            <li>
+              <span class="rm-mark" aria-hidden="true"></span>
+              <span class="rm-phase">Phase 2</span>
+              <span class="rm-text">Auth, API tokens, CLI</span>
+            </li>
+            <li>
+              <span class="rm-mark" aria-hidden="true"></span>
+              <span class="rm-phase">Phase 3</span>
+              <span class="rm-text">Configurable vocabulary, dispatcher adapters</span>
+            </li>
+            <li>
+              <span class="rm-mark" aria-hidden="true"></span>
+              <span class="rm-phase">Phase 4</span>
+              <span class="rm-text">The plan engine and the Claude Code skill</span>
+            </li>
+            <li>
+              <span class="rm-mark" aria-hidden="true"></span>
+              <span class="rm-phase">Phase 5</span>
+              <span class="rm-text">The suggestions inbox: agents propose, humans dispose</span>
+            </li>
+            <li>
+              <span class="rm-mark" aria-hidden="true"></span>
+              <span class="rm-phase">Phase 6</span>
+              <span class="rm-text">Dependency graph view</span>
+            </li>
+          </ol>
+
+          <p class="note">
+            Next.js 16, React 19, Tailwind v4, <code>pg</code> with hand-written SQL, dnd-kit,
+            Postgres 14+.
+          </p>
+
+          <p class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/aisocratic/agora">Follow along on GitHub</a>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap foot-inner">
+        <p class="foot-line">
+          MIT © <a href="https://aisocratic.org">AI Socratic</a>
+        </p>
+        <p class="foot-line foot-quiet">
+          Set in Newsreader, Space Grotesk and JetBrains Mono — all under the SIL Open Font
+          License 1.1.
+        </p>
+      </div>
+    </footer>
+
+    <script src="./main.js"></script>
+  </body>
+</html>
