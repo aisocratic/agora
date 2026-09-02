@@ -1,37 +1,9 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Space_Grotesk, JetBrains_Mono, Newsreader } from "next/font/google"
 import "./globals.css"
+import { Toaster } from "@aisocratic/stoa/components/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/sonner"
-
-// All three faces are OFL-licensed and self-hosted at build time by
-// next/font/google — no font files in this repo, and no runtime request to
-// gstatic (so no third-party font fetch to disclose).
-const spaceGrotesk = Space_Grotesk({
-  weight: ["400", "500"],
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  display: "swap",
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  weight: ["400", "500"],
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  display: "swap",
-})
-
-// Newsreader is variable 200–800 with a true italic. Only the 200 is loaded:
-// headings on a board are chrome, and the extra-light serif is what gives the
-// dense card grid a horizon line without adding visual weight.
-const newsreader = Newsreader({
-  weight: ["200"],
-  style: ["normal", "italic"],
-  variable: "--font-newsreader",
-  subsets: ["latin"],
-  display: "swap",
-})
+import { fontClassName } from "./fonts"
 
 export const metadata: Metadata = {
   title: "Agora",
@@ -46,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${newsreader.variable} antialiased`}
+        className={`${fontClassName} antialiased`}
       >
         <ThemeProvider
           attribute="class"

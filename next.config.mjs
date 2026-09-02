@@ -21,6 +21,7 @@ const nextConfig = {
   poweredByHeader: false,
   experimental: {
     optimizePackageImports: [
+      "@aisocratic/stoa",
       "lucide-react",
       "@radix-ui/react-dialog",
       "@radix-ui/react-popover",

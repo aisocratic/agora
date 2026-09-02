@@ -1,6 +1,4 @@
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { Badge, Button, cn } from "@aisocratic/stoa"
 
 /**
  * Phase 0 placeholder. It exists to prove the substrate end to end — Tailwind v4
@@ -58,7 +56,7 @@ export default function Page() {
         <Badge variant="secondary">doing</Badge>
         {/* The regression this guards: a bare tailwind-merge sorts `text-body`
             into the text-COLOUR group and drops `text-primary-foreground`,
-            rendering white on white. See TYPE_SCALE in lib/utils.ts. */}
+            rendering white on white. See TYPE_SCALE in @aisocratic/stoa. */}
         <span className={cn("rounded bg-primary px-2 py-1 text-primary-foreground", "text-body")}>
           merged colour survives
         </span>
