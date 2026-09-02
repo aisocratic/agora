@@ -29,9 +29,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Newsreader:ital,opsz,wght@0,6..72,200;1,6..72,200&family=Space+Grotesk:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,200;1,6..72,200&family=Space+Grotesk:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <!-- The design system's tokens, vendored verbatim. Must load before styles.css. -->
+    <link rel="stylesheet" href="./vendor/stoa.css" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
 
@@ -39,8 +41,28 @@
     <a class="skip" href="#main">Skip to content</a>
 
     <header class="site-head">
-      <div class="wrap head-inner">
-        <a class="wordmark" href="./">Agora</a>
+      <div class="page-shell head-inner">
+        <a class="lockup" href="./">
+          <svg
+            class="lockup-mark"
+            viewBox="0 0 2822 796"
+            role="img"
+            aria-label="AI Socratic"
+            focusable="false"
+          >
+            <defs>
+              <linearGradient id="agora-brand" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#7c3aed" />
+                <stop offset="35%" stop-color="#a855f7" />
+                <stop offset="65%" stop-color="#ec4899" />
+                <stop offset="100%" stop-color="#f472b6" />
+              </linearGradient>
+            </defs>
+            <path d="M415 50c192.195 0 348 155.805 348 348S607.195 746 415 746 67 590.195 67 398 222.805 50 415 50m0 103c-135.31 0-245 109.69-245 245s109.69 245 245 245 245-109.69 245-245-109.69-245-245-245" fill="url(#agora-brand)" />
+            <path d="m844 591 78.6-354.6h48.6l77.4 354.6h-40.8l-19.2-82.2h-87l-18 82.2zm58.8-103.2H988l-42-205.2zM1095.46 591V236.4h37.8V591zm295.82 4.2q-27 0-46.8-9.6-19.2-9.6-30-31.8-10.8-22.8-10.8-63V471h38.4v22.2q0 30 6 46.8 6.6 16.2 17.4 22.8 11.4 6.6 25.8 6.6 23.4 0 37.8-14.4 15-15 15-52.8 0-27-7.8-40.2-7.8-13.8-24-21.6-16.2-8.4-39.6-18-19.2-7.8-34.8-18.6-15-11.4-23.4-29.4t-8.4-45.6q0-31.2 8.4-51.6 8.4-21 27.6-31.2t51-10.2q41.4 0 63.6 21 22.8 20.4 22.8 58.2v39h-37.2v-30q0-28.8-12.6-43.2-12-15-36-15-26.4 0-38.4 15.6-11.4 15-11.4 46.2 0 23.4 9 37.2 9 13.2 23.4 21 14.4 7.2 30.6 13.2 27 10.2 43.8 21.6 16.8 10.8 24.6 28.2t7.8 48.6q0 36.6-12 58.2-11.4 21-32.4 30.6-20.4 9-47.4 9m220.82 0q-27.6 0-46.2-7.2-18-7.8-27-27-8.4-19.2-8.4-52.8V369.6q0-43.2 18.6-61.8 19.2-18.6 63-18.6t62.4 18q19.2 18 19.2 62.4v138.6q0 33.6-8.4 52.8-8.4 18.6-26.4 26.4t-46.8 7.8m0-23.4q24 0 34.2-12t10.2-43.8V367.8q0-29.4-9.6-42-9.6-13.2-34.8-13.2-23.4 0-34.2 12.6-10.2 12-10.2 42.6V516q0 31.2 10.2 43.8 10.8 12 34.2 12m213.32 24.6q-29.4 0-48-6.6-18.6-7.2-27-25.2-8.4-18.6-8.4-54V364.2q0-43.8 18.6-59.4 19.2-16.2 63-16.2 42.6 0 61.2 15.6 19.2 15.6 19.2 57.6v39h-37.2v-40.2q0-25.8-8.4-37.2-8.4-12-34.8-12t-35.4 12q-9 11.4-9 37.2v159.6q0 28.8 9 40.8 9 11.4 36.6 11.4 25.2 0 33.6-11.4t8.4-40.8V480h37.2v30.6q0 34.2-8.4 52.8t-25.8 25.8-44.4 7.2m131.81-5.4V294h31.2l4.2 31.8q6.6-16.8 21.6-24t30-9q16.8-3.6 32.4-.6v29.4q-2.4-.6-8.4-1.2t-13.2-.6q-6.6 0-12.6 2.4-20.4 2.4-34.2 15-13.8 12-13.8 33V591zm205.76 4.2q-13.8 0-28.2-4.2-13.8-3.6-24-17.4-9.6-14.4-9.6-44.4v-28.8q0-30 18-48 18.6-18.6 50.4-33 20.4-10.2 33-18 13.2-7.8 19.8-17.4t6.6-25.8v-12.6q0-14.4-6-22.2t-16.2-10.8q-9.6-3-20.4-3-27 0-35.4 15-8.4 14.4-8.4 43.2V393h-34.2v-28.8q0-22.2 6-39 6-17.4 22.8-27 16.8-10.2 49.2-10.2 34.2 0 51 7.8 17.4 7.8 22.8 22.2 6 14.4 6 34.2V591h-36.6l-.6-37.2q-7.2 20.4-25.8 31.2-18.6 10.2-40.2 10.2m13.8-25.2q27 0 39-19.2 12.6-19.2 12.6-51V405q-6 9.6-19.8 17.4t-28.2 15.6q-20.4 12-31.8 25.2-10.8 12.6-10.8 35.4V522q0 21.6 6 31.8t15 13.2 18 3m212.02 21.6q-13.2 0-24-3t-18.6-9.6q-7.8-7.2-12-18-4.2-11.4-4.2-28.2V317.4h-26.4v-19.2l28.8-4.2 6.6-55.8h28.2V294h64.2v23.4h-64.2v208.8q0 16.8 6 28.2t26.4 11.4q8.4 0 18-.6 9.6-1.2 13.8-1.2v24q-4.8 0-16.8 1.8t-25.8 1.8m81.12-.6V294h36.6v297zm18.6-333.6q-9 0-15.6-6-6-6.6-6-15 0-9 6-14.4 6.6-6 15.6-6 8.4 0 15 6 6.6 5.4 6.6 14.4 0 8.4-6.6 15-6.6 6-15 6m157.79 339q-29.4 0-48-6.6-18.6-7.2-27-25.2-8.4-18.6-8.4-54V364.2q0-43.8 18.6-59.4 19.2-16.2 63-16.2 42.6 0 61.2 15.6 19.2 15.6 19.2 57.6v39h-37.2v-40.2q0-25.8-8.4-37.2-8.4-12-34.8-12t-35.4 12q-9 11.4-9 37.2v159.6q0 28.8 9 40.8 9 11.4 36.6 11.4 25.2 0 33.6-11.4t8.4-40.8V480h37.2v30.6q0 34.2-8.4 52.8t-25.8 25.8-44.4 7.2" fill="currentColor" />
+          </svg>
+          <span class="lockup-suffix">/ agora</span>
+        </a>
         <nav class="head-nav" aria-label="Sections">
           <a href="#why">Why</a>
           <a href="#agents">Agents</a>
@@ -48,17 +70,17 @@
           <a href="#security">Security</a>
           <a href="#roadmap">Roadmap</a>
         </nav>
-        <a class="head-repo" href="https://github.com/aisocratic/agora">GitHub<span aria-hidden="true"> ↗</span></a>
+        <a class="head-cta" href="https://github.com/aisocratic/agora">GitHub</a>
       </div>
     </header>
 
     <main id="main">
       <!-- ------------------------------------------------------------ hero -->
       <section class="hero">
-        <div class="wrap hero-inner">
+        <div class="page-shell hero-inner">
           <div class="hero-copy">
-            <p class="eyebrow">
-              <span class="pill pill-accent">Early — not yet ready to run</span>
+            <p class="eyebrow-row">
+              <span class="pill pill-caution">Early — not yet ready to run</span>
             </p>
 
             <h1 class="hero-title">
@@ -98,7 +120,7 @@
 
       <!-- ------------------------------------------------------ board mock -->
       <section class="board-band">
-        <div class="wrap board-figure">
+        <div class="page-shell board-figure">
           <figure class="board" aria-labelledby="board-cap">
             <div class="board-chrome" aria-hidden="true">
               <span class="dot"></span><span class="dot"></span><span class="dot"></span>
@@ -197,7 +219,8 @@
 
       <!-- ------------------------------------------------------------- why -->
       <section id="why" class="band">
-        <div class="wrap">
+        <div class="page-shell">
+          <p class="eyebrow">Why</p>
           <h2 class="section-title">Why it exists</h2>
 
           <div class="grid-2">
@@ -239,8 +262,9 @@
       </section>
 
       <!-- ---------------------------------------------------------- agents -->
-      <section id="agents" class="band band-alt">
-        <div class="wrap">
+      <section id="agents" class="band">
+        <div class="page-shell">
+          <p class="eyebrow">Agents</p>
           <h2 class="section-title">How agents use it</h2>
           <p class="section-lede">
             The CLI is an HTTP client, never a database client — it needs a token and a URL, not
@@ -310,7 +334,8 @@
 
       <!-- -------------------------------------------------------- dispatch -->
       <section id="dispatch" class="band">
-        <div class="wrap">
+        <div class="page-shell">
+          <p class="eyebrow">Dispatch</p>
           <h2 class="section-title">Dispatching</h2>
           <p class="section-lede">
             Agora does not run agents. It tells something else to, through one small adapter
@@ -363,8 +388,9 @@
       </section>
 
       <!-- -------------------------------------------------------- security -->
-      <section id="security" class="band band-alt">
-        <div class="wrap">
+      <section id="security" class="band">
+        <div class="page-shell">
+          <p class="eyebrow">Security</p>
           <h2 class="section-title">Security model</h2>
 
           <div class="callout">
@@ -385,7 +411,8 @@
 
       <!-- --------------------------------------------------------- roadmap -->
       <section id="roadmap" class="band">
-        <div class="wrap">
+        <div class="page-shell">
+          <p class="eyebrow">Roadmap</p>
           <h2 class="section-title">Roadmap</h2>
 
           <ol class="roadmap">
@@ -393,7 +420,7 @@
               <span class="rm-mark" aria-hidden="true"></span>
               <span class="rm-phase">Phase 0</span>
               <span class="rm-text">Scaffold, design substrate, fonts</span>
-              <span class="pill pill-quiet">Done</span>
+              <span class="pill pill-done">Done</span>
             </li>
             <li>
               <span class="rm-mark" aria-hidden="true"></span>
@@ -442,13 +469,13 @@
     </main>
 
     <footer class="site-foot">
-      <div class="wrap foot-inner">
+      <div class="page-shell foot-inner">
         <p class="foot-line">
           MIT © <a href="https://aisocratic.org">AI Socratic</a>
         </p>
         <p class="foot-line foot-quiet">
-          Set in Newsreader, Space Grotesk and JetBrains Mono — all under the SIL Open Font
-          License 1.1.
+          Built on Stoa, the AI Socratic design system. Set in Newsreader, Space Grotesk and
+          JetBrains Mono — all under the SIL Open Font License 1.1.
         </p>
       </div>
     </footer>

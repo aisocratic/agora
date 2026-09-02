@@ -1,111 +1,21 @@
 /* ==========================================================================
    Agora — landing page
    --------------------------------------------------------------------------
-   The tokens below are lifted verbatim from the app's `app/globals.css`, so the
-   site and the product are literally the same palette and the same type scale.
-   Dark is the default here (the app's `.dark` block promoted to `:root`) and the
-   light palette comes back under `prefers-color-scheme: light`.
+   Built on Stoa, the AI Socratic design system. `vendor/stoa.css` (loaded
+   first) owns every colour role, radius, type step and font role; this file
+   only arranges them. Nothing below redefines a token, invents a colour, or
+   writes a font size outside the nine-step scale — so the page is one family
+   with aisocratic.org, the Stoa gallery and Atlas, and follows the OS theme
+   for free.
    ========================================================================== */
 
 :root {
-  /* ---------------------------------------------------------------- colour
-   * The app's dark palette. Body text is #e6e6e6, not #fafafa: near-white on
-   * near-black is ~19:1, which on an emissive panel reads as halation — the
-   * thin strokes of Newsreader 200 bloom. #e6e6e6 is still 15.9:1. */
-  --background: #0a0a0a;
-  --foreground: #e6e6e6;
-  --card: #141414;
-  --popover: #0a0a0a;
-  --primary: #fafafa;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1a1a1a;
-  --muted: #262626;
-  --muted-foreground: #a1a1aa;
-  --accent: #fbbf24;
-  --accent-foreground: #0a0a0a;
-  --destructive: #dc2626;
-  --border: #262626;
-  --ring: #fbbf24;
-
-  /* Tints derived from the palette rather than invented. */
-  --accent-soft: color-mix(in srgb, var(--accent) 13%, transparent);
+  /* Agora's own tints, derived from Stoa roles rather than invented. */
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
   --accent-line: color-mix(in srgb, var(--accent) 34%, transparent);
-  --destructive-soft: color-mix(in srgb, var(--destructive) 14%, transparent);
-  --destructive-line: color-mix(in srgb, var(--destructive) 38%, transparent);
-  --destructive-text: #f87171;
-
-  /* ------------------------------------------------------------------ type
-   * One scale on the golden ratio: neighbouring steps are √φ (1.272) apart, so
-   * every other step is exactly φ.
-   *
-   *     11 · 14 · 18 · 23 · 29 · 37 · 47 · 59 · 75
-   *
-   * The four heading steps are fluid, clamping between two adjacent rungs from
-   * 390px to 1440px of viewport. The app anchors running text at 14 because a
-   * board wants density; a page of prose does not, so this surface anchors at
-   * `lead` (18) and keeps 14 for chrome, cards and metadata. Same ladder, one
-   * rung up. */
-  --text-micro: 0.6875rem; /* 11 */
-  --text-micro-lh: 1.45;
-  --text-body: 0.875rem; /* 14 */
-  --text-body-lh: 1.618; /* φ */
-  --text-lead: 1.125rem; /* 18 */
-  --text-lead-lh: 1.5;
-  --text-title: clamp(1.125rem, 1.009rem + 0.476vw, 1.4375rem); /* 18 → 23 */
-  --text-title-lh: 1.35;
-  --text-section: clamp(1.4375rem, 1.298rem + 0.571vw, 1.8125rem); /* 23 → 29 */
-  --text-section-lh: 1.272; /* √φ */
-  --text-page: clamp(1.8125rem, 1.627rem + 0.762vw, 2.3125rem); /* 29 → 37 */
-  --text-page-lh: 1.2;
-  --text-display: clamp(2.3125rem, 2.08rem + 0.952vw, 2.9375rem); /* 37 → 47 */
-  --text-display-lh: 1.15;
-  --text-hero: clamp(2.9375rem, 2.659rem + 1.143vw, 3.6875rem); /* 47 → 59 */
-  --text-hero-lh: 1.1;
-
-  /* ----------------------------------------------------------------- radii
-   * Four rungs of the same φ ladder, anchored on 10px: 6 · 10 · 16 · 26. */
-  --radius-sm: 0.375rem;
-  --radius: 0.625rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.625rem;
-
-  /* -------------------------------------------------------------- families
-   *   body     Space Grotesk — running text and UI
-   *   display  Newsreader 200 — headings and the wordmark
-   *   code     JetBrains Mono — ids, CLI chrome, anything you might copy */
-  --font-body: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial,
-    sans-serif;
-  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
-  --font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #ffffff;
-    --foreground: #0a0a0a;
-    --card: #f8f8f8;
-    --popover: #ffffff;
-    --primary: #0a0a0a;
-    --primary-foreground: #ffffff;
-    --secondary: #e2e8f0;
-    --muted: #f1f5f9;
-    --muted-foreground: #64748b;
-    --accent: #d97706;
-    --accent-foreground: #ffffff;
-    --destructive: #ef4444;
-    --border: #e2e8f0;
-    --ring: #d97706;
-
-    --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
-    --accent-line: color-mix(in srgb, var(--accent) 32%, transparent);
-    --destructive-soft: color-mix(in srgb, var(--destructive) 10%, transparent);
-    --destructive-line: color-mix(in srgb, var(--destructive) 32%, transparent);
-    --destructive-text: #b91c1c;
-
-    color-scheme: light;
-  }
+  --destructive-soft: color-mix(in srgb, var(--status-danger) 12%, transparent);
+  --destructive-line: color-mix(in srgb, var(--status-danger) 38%, transparent);
+  --destructive-text: var(--status-danger);
 }
 
 /* ------------------------------------------------------------------- reset */
@@ -125,9 +35,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body);
-  font-size: var(--text-lead);
+  font-size: var(--text-body);
   font-weight: 400;
-  line-height: var(--text-lead-lh);
+  line-height: var(--text-body--line-height);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-wrap: break-word;
@@ -149,6 +59,10 @@ a:hover {
   text-decoration-color: var(--accent);
 }
 
+::selection {
+  background: var(--accent-soft);
+}
+
 :focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
@@ -162,6 +76,7 @@ pre {
   font-variant-ligatures: none;
 }
 
+/* Newsreader 200 is the only heading face, at one weight. Never bolder. */
 h1,
 h2,
 h3 {
@@ -195,7 +110,7 @@ p {
   background: var(--card);
   border: 1px solid var(--border);
   padding: 0.5rem 0.85rem;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   font-size: var(--text-body);
 }
 
@@ -204,22 +119,30 @@ p {
   top: 0.75rem;
 }
 
-/* ------------------------------------------------------------------ layout */
+/* ------------------------------------------------------------------ layout
+ *
+ * `page-shell` is Stoa's one width utility, transcribed: 72rem of content with
+ * the gutter added on top, so the first gridline lands where it does on every
+ * other AI Socratic surface. */
 
-.wrap {
+.page-shell {
   width: 100%;
-  max-width: 72rem;
+  max-width: calc(72rem + 2rem);
   margin-inline: auto;
-  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+  padding-inline: 1rem;
 }
 
+@media (min-width: 768px) {
+  .page-shell {
+    max-width: calc(72rem + 3rem);
+    padding-inline: 1.5rem;
+  }
+}
+
+/* Stoa's φ-spaced section rhythm: 64px for a section, 104px to open the page. */
 .band {
-  padding-block: clamp(3.5rem, 8vw, 6.5rem);
+  padding-block: 4rem;
   border-top: 1px solid var(--border);
-}
-
-.band-alt {
-  background: color-mix(in srgb, var(--card) 60%, var(--background));
 }
 
 /* -------------------------------------------------------------------- head */
@@ -240,19 +163,38 @@ p {
   min-height: 3.5rem;
 }
 
-.wordmark {
-  font-family: var(--font-display);
-  font-weight: 200;
-  font-size: var(--text-title);
-  letter-spacing: 0.01em;
-  text-decoration: none;
+/* The lockup: the ring in the brand gradient, "AI Socratic" in currentColor,
+ * then the product suffix. One mark, two products, one family. */
+.lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-right: auto;
+  text-decoration: none;
+  color: var(--foreground);
+}
+
+.lockup-mark {
+  height: 1.375rem;
+  width: auto;
+  display: block;
+}
+
+.lockup-suffix {
+  font-family: var(--font-code);
+  font-size: var(--text-micro);
+  line-height: 1;
+  color: var(--muted-foreground);
+  white-space: nowrap;
 }
 
 .head-nav {
   display: none;
-  gap: 1.35rem;
-  font-size: var(--text-body);
+  gap: 1.5rem;
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
@@ -264,15 +206,28 @@ p {
   color: var(--foreground);
 }
 
-.head-repo {
-  font-size: var(--text-body);
+/* The page's single call to action, and the only place `--join` appears. */
+.head-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  padding-inline: 0.85rem;
+  border-radius: var(--radius-lg);
+  background: var(--join);
+  color: var(--join-foreground);
+  font-size: var(--text-micro);
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   text-decoration: none;
-  color: var(--muted-foreground);
   white-space: nowrap;
+  transition: background-color 120ms ease;
 }
 
-.head-repo:hover {
-  color: var(--foreground);
+.head-cta:hover {
+  background: color-mix(in srgb, var(--join) 86%, var(--foreground));
 }
 
 @media (min-width: 62rem) {
@@ -284,7 +239,17 @@ p {
 /* -------------------------------------------------------------------- hero */
 
 .hero {
-  padding-block: clamp(3rem, 7vw, 5.5rem) clamp(3.5rem, 8vw, 6rem);
+  position: relative;
+  padding-block: 6.5rem 4rem;
+}
+
+/* The brand gradient, once on the page: a 2px rule opening the hero. */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--brand-gradient);
 }
 
 /* A grid item's automatic minimum size is its content's min-content width, and
@@ -300,13 +265,22 @@ p {
   max-width: 46rem;
 }
 
-.eyebrow {
+.eyebrow-row {
   margin-bottom: 1.5rem;
+}
+
+.eyebrow {
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
 }
 
 .hero-title {
   font-size: var(--text-hero);
-  line-height: var(--text-hero-lh);
+  line-height: var(--text-hero--line-height);
   letter-spacing: -0.015em;
   margin-bottom: 1.5rem;
 }
@@ -328,8 +302,10 @@ p {
 }
 
 .lede {
-  max-width: 56ch;
-  color: var(--foreground);
+  max-width: 60ch;
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
+  color: var(--reading);
   margin-bottom: 1.15rem;
 }
 
@@ -352,8 +328,8 @@ p {
   align-items: center;
   gap: 0.45rem;
   font-size: var(--text-micro);
-  line-height: var(--text-micro-lh);
-  letter-spacing: 0.06em;
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 0.3rem 0.6rem;
   border-radius: 999px;
@@ -362,19 +338,13 @@ p {
   white-space: nowrap;
 }
 
-.pill-accent {
-  border-color: var(--accent-line);
-  background: var(--accent-soft);
-  color: var(--accent);
+.pill-caution {
+  border-color: color-mix(in srgb, var(--status-caution) 32%, transparent);
+  background: color-mix(in srgb, var(--status-caution) 12%, transparent);
+  color: var(--status-caution);
 }
 
-@media (prefers-color-scheme: light) {
-  .pill-accent {
-    color: #92400e;
-  }
-}
-
-.pill-accent::before {
+.pill-caution::before {
   content: "";
   width: 0.4rem;
   height: 0.4rem;
@@ -382,7 +352,10 @@ p {
   background: currentColor;
 }
 
-.pill-quiet {
+.pill-done {
+  border-color: color-mix(in srgb, var(--status-success) 32%, transparent);
+  background: color-mix(in srgb, var(--status-success) 12%, transparent);
+  color: var(--status-success);
   text-transform: none;
   letter-spacing: 0.02em;
 }
@@ -391,14 +364,15 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.5rem;
+  height: 2.5rem;
   padding: 0 1.15rem;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--foreground);
   font-family: inherit;
   font-size: var(--text-body);
+  line-height: 1;
   font-weight: 500;
   text-decoration: none;
   transition:
@@ -445,7 +419,8 @@ p {
 .code-label {
   font-family: var(--font-code);
   font-size: var(--text-micro);
-  letter-spacing: 0.05em;
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -453,7 +428,8 @@ p {
 .copy-btn {
   font-family: var(--font-code);
   font-size: var(--text-micro);
-  letter-spacing: 0.05em;
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
   background: transparent;
@@ -473,7 +449,7 @@ p {
   padding: 1rem 1.1rem;
   overflow-x: auto;
   font-size: var(--text-body);
-  line-height: 1.7;
+  line-height: var(--text-body--line-height);
   tab-size: 2;
 }
 
@@ -483,19 +459,12 @@ p {
 
 .c-cmd {
   color: var(--foreground);
-  font-weight: 400;
+  font-weight: 500;
 }
 
-.c-op {
-  color: var(--muted-foreground);
-}
-
+.c-op,
 .c-comment {
   color: var(--muted-foreground);
-}
-
-.code-json pre {
-  line-height: 1.6;
 }
 
 .j-key {
@@ -516,26 +485,22 @@ p {
   color: var(--muted-foreground);
 }
 
-@media (prefers-color-scheme: light) {
-  .j-key {
-    color: #92400e;
-  }
-}
-
 .board-band {
-  padding-bottom: clamp(3rem, 7vw, 5rem);
+  padding-bottom: 4rem;
 }
 
 /* --------------------------------------------------------------- board mock
  *
  * One illustrative visual, drawn in CSS rather than screenshotted: the four
- * columns, and the four things a card carries that a normal board doesn't. */
+ * columns, and the four things a card carries that a normal board doesn't.
+ * Every flag is a Stoa status role, so the mock reads the same way the product
+ * will. */
 
 .board {
   margin: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  background: color-mix(in srgb, var(--card) 70%, var(--background));
+  background: var(--card);
   overflow: hidden;
 }
 
@@ -560,6 +525,7 @@ p {
   margin-left: 0.5rem;
   font-family: var(--font-code);
   font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
   color: var(--muted-foreground);
 }
 
@@ -569,8 +535,8 @@ p {
   margin-left: auto;
   font-family: var(--font-code);
   font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
   color: var(--muted-foreground);
-  opacity: 0.8;
 }
 
 @media (min-width: 62rem) {
@@ -609,7 +575,8 @@ p {
   font-family: var(--font-body);
   font-weight: 500;
   font-size: var(--text-micro);
-  letter-spacing: 0.09em;
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
   padding: 0 0.15rem 0.35rem;
@@ -620,21 +587,13 @@ p {
 .col-count {
   font-family: var(--font-code);
   letter-spacing: 0;
-  opacity: 0.7;
 }
 
 .mock-card {
   background: var(--background);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding: 0.6rem 0.65rem 0.55rem;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.18);
-}
-
-@media (prefers-color-scheme: light) {
-  .mock-card {
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
-  }
 }
 
 .mc-title {
@@ -660,8 +619,9 @@ p {
   gap: 0.3rem;
   font-family: var(--font-code);
   font-size: var(--text-micro);
-  line-height: 1.5;
-  padding: 0.1rem 0.4rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.28rem 0.4rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--secondary);
@@ -676,7 +636,12 @@ p {
   background: transparent;
   border-color: transparent;
   padding-inline: 0.1rem;
-  opacity: 0.75;
+}
+
+.chip-policy {
+  background: color-mix(in srgb, var(--status-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--status-accent) 30%, transparent);
+  color: var(--status-accent);
 }
 
 .chip-policy::before {
@@ -684,8 +649,14 @@ p {
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 999px;
-  background: var(--muted-foreground);
+  background: currentColor;
   flex: none;
+}
+
+.chip-pr {
+  background: color-mix(in srgb, var(--status-info) 12%, transparent);
+  border-color: color-mix(in srgb, var(--status-info) 30%, transparent);
+  color: var(--status-info);
 }
 
 .chip-pr::before {
@@ -693,15 +664,10 @@ p {
   font-size: 0.9em;
 }
 
-.chip-pr {
-  color: var(--foreground);
-  border-color: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
-}
-
 .chip-merge {
-  border-color: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
-  background: transparent;
-  color: var(--foreground);
+  background: color-mix(in srgb, var(--status-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--status-success) 30%, transparent);
+  color: var(--status-success);
 }
 
 .chip-merge::before {
@@ -710,15 +676,9 @@ p {
 }
 
 .chip-gate {
-  border-color: var(--accent-line);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-@media (prefers-color-scheme: light) {
-  .chip-gate {
-    color: #92400e;
-  }
+  background: color-mix(in srgb, var(--status-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--status-warning) 30%, transparent);
+  color: var(--status-warning);
 }
 
 .chip-gate::before {
@@ -727,8 +687,8 @@ p {
 }
 
 .chip-blocked {
-  border-color: var(--destructive-line);
   background: var(--destructive-soft);
+  border-color: var(--destructive-line);
   color: var(--destructive-text);
 }
 
@@ -751,7 +711,7 @@ p {
   background: linear-gradient(
     to bottom,
     color-mix(in srgb, var(--muted-foreground) 20%, transparent),
-    color-mix(in srgb, var(--destructive) 55%, transparent)
+    color-mix(in srgb, var(--status-danger) 55%, transparent)
   );
 }
 
@@ -763,40 +723,43 @@ p {
   transform: translateX(-50%);
   border-left: 3.5px solid transparent;
   border-right: 3.5px solid transparent;
-  border-top: 5px solid color-mix(in srgb, var(--destructive) 65%, transparent);
+  border-top: 5px solid color-mix(in srgb, var(--status-danger) 65%, transparent);
 }
 
 .board-cap {
   padding: 0.25rem 1rem 1rem;
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--text-body--line-height);
   color: var(--muted-foreground);
-  max-width: 56ch;
+  max-width: 62ch;
 }
 
 /* ---------------------------------------------------------------- sections */
 
 .section-title {
-  font-size: var(--text-page);
-  line-height: var(--text-page-lh);
+  font-size: var(--text-section);
+  line-height: var(--text-section--line-height);
   margin-bottom: 1.25rem;
 }
 
 .sub-title {
   font-size: var(--text-title);
-  line-height: var(--text-title-lh);
+  line-height: var(--text-title--line-height);
   margin-top: 2.75rem;
   margin-bottom: 0.75rem;
 }
 
 .section-lede {
-  max-width: 58ch;
+  max-width: 60ch;
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
   color: var(--muted-foreground);
   margin-bottom: 2.25rem;
 }
 
 .prose {
-  max-width: 62ch;
+  max-width: 66ch;
+  color: var(--reading);
   margin-bottom: 1rem;
 }
 
@@ -805,10 +768,10 @@ p {
 }
 
 .note {
-  max-width: 66ch;
+  max-width: 70ch;
   margin-top: 1.5rem;
   font-size: var(--text-body);
-  line-height: 1.7;
+  line-height: var(--text-body--line-height);
   color: var(--muted-foreground);
 }
 
@@ -826,15 +789,15 @@ p {
 
 .point h3 {
   font-size: var(--text-title);
-  line-height: var(--text-title-lh);
+  line-height: var(--text-title--line-height);
   margin-bottom: 0.5rem;
 }
 
 .point p {
   color: var(--muted-foreground);
   font-size: var(--text-body);
-  line-height: 1.75;
-  max-width: 48ch;
+  line-height: var(--text-body--line-height);
+  max-width: 52ch;
 }
 
 .point code,
@@ -900,7 +863,8 @@ p {
 .table thead th {
   font-family: var(--font-body);
   font-size: var(--text-micro);
-  letter-spacing: 0.08em;
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
   font-weight: 500;
@@ -924,7 +888,7 @@ p {
 .callout {
   border: 1px solid var(--border);
   border-left: 2px solid var(--accent-line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-xl);
   background: var(--card);
   padding: clamp(1.25rem, 3vw, 1.75rem);
 }
@@ -946,6 +910,7 @@ p {
   padding: 0.7rem 0;
   border-bottom: 1px solid var(--border);
   font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
   color: var(--muted-foreground);
 }
 
@@ -962,8 +927,8 @@ p {
 }
 
 .roadmap .done .rm-mark {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--status-success);
+  border-color: var(--status-success);
 }
 
 .roadmap .done {
@@ -973,7 +938,8 @@ p {
 .rm-phase {
   font-family: var(--font-code);
   font-size: var(--text-micro);
-  letter-spacing: 0.05em;
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
   white-space: nowrap;
@@ -1003,7 +969,7 @@ p {
 
 .site-foot {
   border-top: 1px solid var(--border);
-  padding-block: 2.5rem 3.5rem;
+  padding-block: 2.5rem 4rem;
 }
 
 .foot-inner {
@@ -1014,11 +980,12 @@ p {
 
 .foot-line {
   font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
 }
 
 .foot-quiet {
   color: var(--muted-foreground);
-  max-width: 52ch;
+  max-width: 62ch;
 }
 
 @media (prefers-reduced-motion: reduce) {
