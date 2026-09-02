@@ -89,7 +89,7 @@ proxy that authenticates for you (`AGORA_AUTH=proxy`), or set a shared password
 
 ## Roadmap
 
-- [x] **Phase 0** — scaffold, design substrate, fonts
+- [x] **Phase 0** — scaffold, fonts, design system ([`@aisocratic/stoa`](https://github.com/aisocratic/stoa))
 - [ ] **Phase 1** — the board on Postgres: columns, drag and drop, card editor, live refresh
 - [ ] **Phase 2** — auth, API tokens, CLI
 - [ ] **Phase 3** — configurable vocabulary, dispatcher adapters
@@ -109,5 +109,6 @@ Postgres 14+. No ORM — the queries are SQL you can paste into psql.
 
 ## License
 
-MIT © AI Socratic. Fonts are Space Grotesk, Newsreader and JetBrains Mono, all
-under the SIL Open Font License 1.1 and self-hosted at build time.
+MIT © AI Socratic. The look comes from [`@aisocratic/stoa`](https://github.com/aisocratic/stoa),
+the AI Socratic design system. Fonts are Space Grotesk, Newsreader and JetBrains
+Mono, all under the SIL Open Font License 1.1 and self-hosted at build time.
