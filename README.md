@@ -2,6 +2,8 @@
 
 **A kanban board built for humans and coding agents.**
 
+Website: [aisocratic.github.io/agora](https://aisocratic.github.io/agora/)
+
 Most boards assume a person moves every card. Agora assumes some of the work is
 done by coding agents, and makes that a first-class part of the model: a card
 carries a PR link, an automerge flag, a review verdict, and its own model /
