@@ -14,7 +14,7 @@ import { mkdir, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-const VERSION = "0.1.0"
+const VERSION = "0.2.0"
 
 const URL_ = `https://cdn.jsdelivr.net/npm/@aisocratic/stoa@${VERSION}/dist/css/tokens.css`
 const OUT = join(dirname(dirname(fileURLToPath(import.meta.url))), "vendor", "stoa.css")

@@ -66,7 +66,7 @@ a:hover {
 :focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
 }
 
 code,
@@ -110,7 +110,7 @@ p {
   background: var(--card);
   border: 1px solid var(--border);
   padding: 0.5rem 0.85rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   font-size: var(--text-body);
 }
 
@@ -145,22 +145,30 @@ p {
   border-top: 1px solid var(--border);
 }
 
-/* -------------------------------------------------------------------- head */
+/* -------------------------------------------------------------------- head
+ *
+ * Stoa's `SiteHeader`, transcribed: out of flow (absolute, it scrolls away
+ * with the page), brand left, the navigation centred on the bar, controls
+ * right. Its geometry is load-bearing: 24px top padding + 16px + a 48px brand
+ * row + 16px = 104px, which is what the hero's top padding clears. */
 
 .site-head {
-  position: sticky;
+  position: absolute;
   top: 0;
-  z-index: 20;
-  background: color-mix(in srgb, var(--background) 88%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  left: 0;
+  z-index: 50;
+  width: 100%;
+  padding-top: 1.5rem;
 }
 
+/* `relative` is required: the nav is absolutely centred and would otherwise
+ * centre on the viewport instead of the bar. */
 .head-inner {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  min-height: 3.5rem;
+  justify-content: space-between;
+  padding-block: 1rem;
 }
 
 /* The lockup: the ring in the brand gradient, "AI Socratic" in currentColor,
@@ -169,13 +177,13 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-right: auto;
+  height: 3rem;
   text-decoration: none;
   color: var(--foreground);
 }
 
 .lockup-mark {
-  height: 1.375rem;
+  height: 2.25rem;
   width: auto;
   display: block;
 }
@@ -188,22 +196,97 @@ p {
   white-space: nowrap;
 }
 
+/* Stoa's `text-nav`: body size, uppercase, 0.08em, in the body face — muted
+ * until hovered, as on aisocratic.org. Hidden below `lg`, where the sections
+ * are one scroll away anyway. */
 .head-nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: none;
-  gap: 1.5rem;
-  font-size: var(--text-micro);
-  line-height: var(--text-micro--line-height);
-  letter-spacing: 0.14em;
+  align-items: center;
+  gap: 2rem;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--tracking-nav);
   text-transform: uppercase;
-  color: var(--muted-foreground);
 }
 
 .head-nav a {
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   text-decoration: none;
+  transition: color 150ms ease-out;
 }
 
 .head-nav a:hover {
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Stoa's `ThemeToggle`: a 32px circle with a generous hit area. Rendered
+ * `hidden` and revealed by main.js, since without JS it could do nothing. */
+.theme-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   color: var(--foreground);
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.theme-toggle[hidden] {
+  display: none;
+}
+
+.theme-toggle::before {
+  content: "";
+  position: absolute;
+  inset: -0.375rem;
+}
+
+.theme-toggle:hover {
+  background: var(--secondary);
+}
+
+.theme-toggle svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* Which icon shows follows the same three-way resolution as the tokens: an
+ * explicit `data-theme`, else the OS preference. */
+.theme-toggle .icon-sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-toggle .icon-sun {
+  display: block;
+}
+
+:root[data-theme="dark"] .theme-toggle .icon-moon {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle .icon-sun {
+    display: block;
+  }
+
+  :root:not([data-theme="light"]) .theme-toggle .icon-moon {
+    display: none;
+  }
 }
 
 /* The page's single call to action, and the only place `--join` appears. */
@@ -213,14 +296,12 @@ p {
   justify-content: center;
   height: 2rem;
   padding-inline: 0.85rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--join);
   color: var(--join-foreground);
-  font-size: var(--text-micro);
+  font-size: var(--text-body);
   line-height: 1;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
   transition: background-color 120ms ease;
@@ -230,17 +311,20 @@ p {
   background: color-mix(in srgb, var(--join) 86%, var(--foreground));
 }
 
-@media (min-width: 62rem) {
+@media (min-width: 64rem) {
   .head-nav {
     display: flex;
   }
 }
 
-/* -------------------------------------------------------------------- hero */
+/* -------------------------------------------------------------------- hero
+ *
+ * The first section takes `lead`: Stoa's md section (64px) plus the 104px
+ * header it has to clear. */
 
 .hero {
   position: relative;
-  padding-block: 6.5rem 4rem;
+  padding-block: 10.5rem 4rem;
 }
 
 /* The brand gradient, once on the page: a 2px rule opening the hero. */
@@ -272,7 +356,7 @@ p {
 .eyebrow {
   font-size: var(--text-micro);
   line-height: var(--text-micro--line-height);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--muted-foreground);
   margin-bottom: 0.5rem;
@@ -329,7 +413,7 @@ p {
   gap: 0.45rem;
   font-size: var(--text-micro);
   line-height: var(--text-micro--line-height);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   padding: 0.3rem 0.6rem;
   border-radius: 999px;
@@ -366,7 +450,7 @@ p {
   justify-content: center;
   height: 2.5rem;
   padding: 0 1.15rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--foreground);
@@ -420,7 +504,7 @@ p {
   font-family: var(--font-code);
   font-size: var(--text-micro);
   line-height: var(--text-micro--line-height);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -429,12 +513,12 @@ p {
   font-family: var(--font-code);
   font-size: var(--text-micro);
   line-height: var(--text-micro--line-height);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--muted-foreground);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   padding: 0.15rem 0.45rem;
   cursor: pointer;
 }
@@ -576,7 +660,7 @@ p {
   font-weight: 500;
   font-size: var(--text-micro);
   line-height: var(--text-micro--line-height);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--muted-foreground);
   padding: 0 0.15rem 0.35rem;
@@ -592,7 +676,7 @@ p {
 .mock-card {
   background: var(--background);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   padding: 0.6rem 0.65rem 0.55rem;
 }
 
@@ -622,7 +706,7 @@ p {
   font-weight: 500;
   line-height: 1;
   padding: 0.28rem 0.4rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--secondary);
   color: var(--muted-foreground);
@@ -807,7 +891,7 @@ p {
 .callout code {
   background: var(--secondary);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   padding: 0.05em 0.32em;
   font-size: 0.85em;
   white-space: nowrap;
@@ -864,7 +948,7 @@ p {
   font-family: var(--font-body);
   font-size: var(--text-micro);
   line-height: var(--text-micro--line-height);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--muted-foreground);
   font-weight: 500;
@@ -939,7 +1023,7 @@ p {
   font-family: var(--font-code);
   font-size: var(--text-micro);
   line-height: var(--text-micro--line-height);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--muted-foreground);
   white-space: nowrap;
@@ -965,26 +1049,109 @@ p {
   }
 }
 
-/* -------------------------------------------------------------------- foot */
+/* -------------------------------------------------------------------- foot
+ *
+ * Stoa's `SiteFooter`, transcribed: a brand column with a one-line
+ * description, link columns under eyebrow heads, then a full-bleed rule and a
+ * bottom bar. The rules sit on full-bleed elements so they span the viewport
+ * rather than stopping at the 72rem column. */
 
 .site-foot {
-  border-top: 1px solid var(--border);
-  padding-block: 2.5rem 4rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
 }
 
-.foot-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+.foot-grid {
+  display: grid;
+  gap: 3rem;
+  padding-block: 4rem;
 }
 
-.foot-line {
+@media (min-width: 48rem) {
+  .foot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .foot-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.foot-brand .lockup {
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+.foot-brand .lockup-mark {
+  height: 1.75rem;
+}
+
+.foot-desc {
   font-size: var(--text-body);
   line-height: var(--text-body--line-height);
+  color: var(--muted-foreground);
+}
+
+.foot-head {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--foreground);
+  margin: 0 0 1rem;
+}
+
+.foot-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.foot-links a,
+.foot-bar a {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 150ms ease-out;
+}
+
+.foot-links a:hover,
+.foot-bar a:hover {
+  color: var(--foreground);
+}
+
+.foot-bar {
+  border-top: 1px solid var(--border);
+}
+
+.foot-bar-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 2rem;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+@media (min-width: 48rem) {
+  .foot-bar-inner {
+    flex-direction: row;
+    text-align: left;
+  }
 }
 
 .foot-quiet {
-  color: var(--muted-foreground);
   max-width: 62ch;
 }
 
