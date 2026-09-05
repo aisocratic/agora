@@ -95,8 +95,9 @@ The [plan engine](docs/PLANNING.md) groups leaf tasks into dependency waves,
 retains human assignments and review gates, and classifies merge candidates.
 `agora skill install` installs the portable Claude Code workflow skill. The
 [suggestions inbox](docs/SUGGESTIONS.md) lets agents propose work for human
-review before it becomes a card. The dependency graph is undergoing final
-browser acceptance; see the [roadmap evidence](docs/ROADMAP.md).
+review before it becomes a card. The dependency graph shows prerequisite direction,
+readiness and cycle feedback, with navigation into the same card editor. See the
+[roadmap evidence](docs/ROADMAP.md).
 
 - [x] Shared AI Socratic design and responsive browser board
 - [x] Card editor, drag and reorder, archive and backup workflows
@@ -106,7 +107,7 @@ browser acceptance; see the [roadmap evidence](docs/ROADMAP.md).
 - [x] Configurable workflow, agent policies and dispatch adapters
 - [x] Dependency planning and portable Claude Code skill
 - [x] Suggestions inbox with human review
-- [ ] Dependency graph acceptance
+- [x] Dependency graph with desktop/mobile acceptance
 
 ## Shared design
 
