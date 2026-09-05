@@ -57,11 +57,15 @@ is the integration point for authentication and API tokens.
 
 | Method and path | Request | Response |
 | --- | --- | --- |
-| `GET /api/board` | Optional `If-None-Match: "revision"` | `{ board, revision }` plus `ETag`, or 304 |
+| `GET /api/board` | Optional `If-None-Match` using the returned ETag | `{ board, revision, workflow, ...plan }` plus `ETag`, or 304 |
 | `POST /api/board` | `{ action, revision }` | Updated `{ board, revision }` |
 | `PUT /api/board` | `{ board, revision }` | Add missing card IDs, preserve existing IDs; updated state |
 | `GET /api/cards/:id` | — | `{ card, revision }`, or 404 |
 | `POST /api/cards/:id/comments` | `{ body, revision }` | Updated board with a server-attributed comment, status 201 |
+
+The read envelope includes the [planning classifications](PLANNING.md). Its ETag
+combines board revision and workflow configuration, so configuration-only changes
+also invalidate cached plans. Return the exact received ETag in `If-None-Match`.
 
 Mutation requests use `Content-Type: application/json`. `board` has schema
 `{ version: 1, cards: [...] }`; its `version` is the backup format version, distinct

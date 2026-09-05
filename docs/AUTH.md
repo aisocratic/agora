@@ -1,7 +1,10 @@
 # Shared access
 
 Agora has one shared board and no per-card roles. Every authenticated session,
-proxy identity or API token can read and mutate it. Assignees are task metadata;
+proxy identity or API token can read and mutate board cards. Suggestions may be
+submitted and read with API tokens; reviewing, accepting and dismissing them
+requires a human browser principal. See [SUGGESTIONS.md](SUGGESTIONS.md).
+Assignees are task metadata;
 they do not grant access. The Pages personal board is public application code
 with data stored privately in each browser and needs no server authentication.
 
