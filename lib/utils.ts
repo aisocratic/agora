@@ -3,4 +3,4 @@
  * for app-local shadcn components (the CLI writes that import) without a
  * second tailwind-merge that does not know the type scale.
  */
-export { cn } from "@aisocratic/stoa"
+export { cn } from "@aisocratic/design"

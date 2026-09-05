@@ -91,7 +91,7 @@ proxy that authenticates for you (`AGORA_AUTH=proxy`), or set a shared password
 
 ## Roadmap
 
-- [x] **Phase 0** — scaffold, fonts, design system ([`@aisocratic/stoa`](https://github.com/aisocratic/stoa))
+- [x] **Phase 0** — scaffold, fonts, design system ([`@aisocratic/design`](https://github.com/aisocratic/stoa))
 - [ ] **Phase 1** — the board on Postgres: columns, drag and drop, card editor, live refresh
 - [ ] **Phase 2** — auth, API tokens, CLI
 - [ ] **Phase 3** — configurable vocabulary, dispatcher adapters
@@ -111,6 +111,36 @@ Postgres 14+. No ORM — the queries are SQL you can paste into psql.
 
 ## License
 
-MIT © AI Socratic. The look comes from [`@aisocratic/stoa`](https://github.com/aisocratic/stoa),
+MIT © AI Socratic. The look comes from [`@aisocratic/design`](https://github.com/aisocratic/stoa),
 the AI Socratic design system. Fonts are Space Grotesk, Newsreader and JetBrains
 Mono, all under the SIL Open Font License 1.1 and self-hosted at build time.
+
+## Shared design
+
+The app and [GitHub Pages site](https://aisocratic.github.io/agora/) consume
+[`@aisocratic/design`](https://github.com/aisocratic/stoa). The app imports its
+React components and Tailwind theme; the static site imports the same tokens and
+site recipes in `site/vendor/design.css`. Header, centered hero, buttons, type,
+themes and footer are shared with Stoa and Atlas.
+
+The package archive is pinned inside `vendor/`, so `pnpm install --frozen-lockfile`
+works from a clean clone without a sibling checkout or an unpublished registry
+package. `vendor/design.json` records its SHA-256; `site/vendor/design.json` records
+the exact upstream CSS SHA-256. Fonts fill the package's `--aisocratic-font-*` slots.
+
+To refresh both copies from a Stoa checkout:
+
+```sh
+# In the Stoa checkout:
+pnpm build
+# In Agora (the path can point anywhere):
+pnpm design:sync /path/to/stoa
+pnpm design:check
+pnpm verify
+pnpm build
+```
+
+Commit the archive, both metadata files, CSS, manifest and lockfile together.
+Keep only Agora content and board preview styles in `site/styles.css`; update
+shared chrome in Stoa. The static site needs no build step and its existing Pages
+workflow deploys `site/`. Preview with `python3 -m http.server 4174 --directory site`.

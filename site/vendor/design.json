@@ -1,0 +1,6 @@
+{
+  "package": "@aisocratic/design",
+  "version": "0.2.0",
+  "source": "dist/css/site.css",
+  "sha256": "e35ec5ff507dbdecca3f6e591a36ccd21ebbed0bfe075643e53b5eb101964df2"
+}

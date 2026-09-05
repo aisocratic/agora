@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@aisocratic/stoa':
-        specifier: file:../.stoa-packs/aisocratic-stoa-0.2.0.tgz
-        version: file:../.stoa-packs/aisocratic-stoa-0.2.0.tgz(qda25ybvgzch5yixk2zf5poeie)
+      '@aisocratic/design':
+        specifier: file:vendor/aisocratic-design-0.2.0.tgz
+        version: file:vendor/aisocratic-design-0.2.0.tgz(qda25ybvgzch5yixk2zf5poeie)
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -39,7 +39,7 @@ importers:
         specifier: 1.0.4
         version: 1.0.4(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       lucide-react:
-        specifier: ^1.40.0
+        specifier: ^1.29.0
         version: 1.40.0(react@19.2.8)
       next:
         specifier: 16.3.0
@@ -48,71 +48,71 @@ importers:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       pg:
-        specifier: ^8.23.0
+        specifier: ^8.20.0
         version: 8.23.0
       react:
-        specifier: ^19.2.8
+        specifier: ^19
         version: 19.2.8
       react-dom:
-        specifier: ^19.2.8
+        specifier: ^19
         version: 19.2.8(react@19.2.8)
       sonner:
-        specifier: ^2.0.8
+        specifier: ^2.0.7
         version: 2.0.8(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       zod:
         specifier: 4.4.3
         version: 4.4.3
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
+        specifier: ^1.57.0
         version: 1.62.1
       '@tailwindcss/postcss':
-        specifier: ^4.3.3
+        specifier: ^4.1.9
         version: 4.3.3
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
       '@testing-library/jest-dom':
-        specifier: ^7.0.1
+        specifier: ^7.0.0
         version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)))
       '@testing-library/react':
-        specifier: ^16.3.3
+        specifier: ^16.3.2
         version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@types/node':
-        specifier: ^26.4.1
+        specifier: ^26.1.2
         version: 26.4.1
       '@types/pg':
-        specifier: ^8.23.1
+        specifier: ^8.18.0
         version: 8.23.1
       '@types/react':
-        specifier: ^19.2.18
+        specifier: ^19.2.7
         version: 19.2.18
       '@types/react-dom':
-        specifier: ^19.2.7
+        specifier: ^19
         version: 19.2.7(@types/react@19.2.18)
       '@vitejs/plugin-react':
-        specifier: ^6.1.1
+        specifier: ^6.0.5
         version: 6.1.1(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13))
       eslint:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.7.0)
       eslint-config-next:
-        specifier: ^16.3.4
+        specifier: ^16.3.0
         version: 16.3.4(@typescript-eslint/parser@8.69.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1
       tailwindcss:
-        specifier: ^4.3.3
+        specifier: ^4.1.9
         version: 4.3.3
       tsx:
-        specifier: ^4.23.13
+        specifier: ^4.21.0
         version: 4.23.13
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
       vitest:
-        specifier: ^4.1.11
+        specifier: ^4.1.10
         version: 4.1.11(@types/node@26.4.1)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13))
 
 packages:
@@ -120,8 +120,8 @@ packages:
   '@adobe/css-tools@4.5.0':
     resolution: {integrity: sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==}
 
-  '@aisocratic/stoa@file:../.stoa-packs/aisocratic-stoa-0.2.0.tgz':
-    resolution: {integrity: sha512-L9a463o9kNmJW/gRPWcQtb5HjX0hJImaUYiXjlbrrh6d1xYs1S5AdUXvw7dXQ0CqK9FWDWM7Jiy4aHI8NF2KMg==, tarball: file:../.stoa-packs/aisocratic-stoa-0.2.0.tgz}
+  '@aisocratic/design@file:vendor/aisocratic-design-0.2.0.tgz':
+    resolution: {integrity: sha512-nfHn9ifMm1ZAkAE+RleBtsd2Fknx43JNj7X6iOAqXdQUHzc2ZaHuRTPU/lqk4HDyeZbg5rBpWrcYNVMOQ/gA4A==, tarball: file:vendor/aisocratic-design-0.2.0.tgz}
     version: 0.2.0
     engines: {node: '>=22.6'}
     peerDependencies:
@@ -3618,7 +3618,7 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@aisocratic/stoa@file:../.stoa-packs/aisocratic-stoa-0.2.0.tgz(qda25ybvgzch5yixk2zf5poeie)':
+  '@aisocratic/design@file:vendor/aisocratic-design-0.2.0.tgz(qda25ybvgzch5yixk2zf5poeie)':
     dependencies:
       '@radix-ui/react-slot': 1.2.4(@types/react@19.2.18)(react@19.2.8)
       class-variance-authority: 0.7.1

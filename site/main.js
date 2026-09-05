@@ -1,44 +1,72 @@
 /*
  * Three progressive enhancements, no dependencies. Without JS the page is a
  * complete, readable document: the code blocks are plain (selectable) text,
- * there is simply no copy button, and the theme follows the OS.
+ * there is simply no copy button, and the theme defaults to dark.
  */
 ;(function () {
   "use strict"
 
-  /* ----------------------------------------------------------- theme toggle
-   *
-   * Stoa's ThemeToggle, by hand. A chosen theme lands on <html data-theme>,
-   * which the vendored tokens key on, and is restored before first paint by
-   * the inline script in <head>. With no choice the OS preference applies. */
+  /* Theme preference cycles dark → light → system; all controls stay in sync. */
+  var toggles = document.querySelectorAll(".theme-toggle")
+  var prefersDark = window.matchMedia("(prefers-color-scheme: dark)")
+  var preference = "dark"
+  try {
+    var saved = localStorage.getItem("agora-theme")
+    if (["dark", "light", "system"].indexOf(saved) !== -1) preference = saved
+  } catch (e) {}
 
-  var toggle = document.querySelector(".theme-toggle")
-  if (toggle) {
-    var prefersDark = window.matchMedia("(prefers-color-scheme: dark)")
-
-    var isDark = function () {
-      var chosen = document.documentElement.getAttribute("data-theme")
-      return chosen ? chosen === "dark" : prefersDark.matches
-    }
-
-    var relabel = function () {
-      toggle.setAttribute("aria-label", isDark() ? "Switch to light mode" : "Switch to dark mode")
-    }
-
-    toggle.addEventListener("click", function () {
-      var next = isDark() ? "light" : "dark"
-      document.documentElement.setAttribute("data-theme", next)
-      try {
-        localStorage.setItem("agora-theme", next)
-      } catch (e) {
-        /* Private mode or storage disabled: the choice still holds for this page. */
-      }
-      relabel()
+  function applyTheme() {
+    var resolved = preference === "system" ? (prefersDark.matches ? "dark" : "light") : preference
+    document.documentElement.setAttribute("data-theme", resolved)
+    var next = preference === "dark" ? "light" : preference === "light" ? "system" : "dark"
+    toggles.forEach(function (toggle) {
+      toggle.setAttribute("aria-label", "Theme: " + preference + ". Switch to " + next + " mode")
+      toggle.title = "Theme: " + preference + ". Switch to " + next + " mode"
+      toggle.hidden = false
     })
+  }
+  toggles.forEach(function (toggle) {
+    toggle.addEventListener("click", function () {
+      preference = preference === "dark" ? "light" : preference === "light" ? "system" : "dark"
+      try { localStorage.setItem("agora-theme", preference) } catch (e) {}
+      applyTheme()
+    })
+  })
+  prefersDark.addEventListener("change", applyTheme)
+  applyTheme()
 
-    prefersDark.addEventListener("change", relabel)
-    relabel()
-    toggle.hidden = false
+  var menuToggle = document.getElementById("menu-toggle")
+  var menu = document.getElementById("mobile-menu")
+  var overlay = document.querySelector(".menu-overlay")
+  function setMenu(open, restoreFocus) {
+    menu.hidden = !open
+    overlay.hidden = !open
+    menuToggle.setAttribute("aria-expanded", String(open))
+    menuToggle.setAttribute("aria-label", open ? "Close menu" : "Open menu")
+    document.body.style.overflow = open ? "hidden" : ""
+    if (restoreFocus) menuToggle.focus()
+  }
+  if (menuToggle && menu && overlay) {
+    menuToggle.hidden = false
+    menuToggle.addEventListener("click", function () { setMenu(menu.hidden, false) })
+    overlay.addEventListener("click", function () { setMenu(false, true) })
+    menu.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () { setMenu(false, false) })
+    })
+    document.addEventListener("keydown", function (event) {
+      if (menu.hidden) return
+      if (event.key === "Escape") { event.preventDefault(); setMenu(false, true) }
+      if (event.key === "Tab") {
+        var focusable = Array.from(document.querySelectorAll(".site-header a, .site-header button, .mobile-menu a")).filter(function (element) { return element.getClientRects().length })
+        var first = focusable[0]
+        var last = focusable[focusable.length - 1]
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+      }
+    })
+    window.matchMedia("(min-width: 64rem)").addEventListener("change", function (event) {
+      if (event.matches) setMenu(false, false)
+    })
   }
 
   /* ------------------------------------------------------------- JSON tint

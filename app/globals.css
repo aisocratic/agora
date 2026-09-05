@@ -1,4 +1,4 @@
 @import "tailwindcss";
-@import "@aisocratic/stoa/tailwind.css";
+@import "@aisocratic/design/tailwind.css";
 
 /* Agora-specific overrides go below, unlayered, so they win over the package. */

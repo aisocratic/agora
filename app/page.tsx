@@ -1,6 +1,6 @@
 import Link from "next/link"
-import { Badge, Button, Card, Section, SiteHeader, Wordmark, cn } from "@aisocratic/stoa"
-import { ThemeToggle } from "@aisocratic/stoa/components/theme-toggle"
+import { Badge, Button, Card, Section, SiteHeader, Wordmark, cn } from "@aisocratic/design"
+import { ThemeToggle } from "@aisocratic/design/components/theme-toggle"
 
 /**
  * Phase 0 placeholder. It exists to prove the substrate end to end — Tailwind v4
@@ -18,8 +18,8 @@ export default function Page() {
         linkComponent={Link}
         brand={
           <Link href="/" aria-label="Agora home" className="flex items-center gap-2 text-foreground">
-            <Wordmark height={36} />
-            <span className="text-micro font-code text-muted-foreground">/ agora</span>
+            <Wordmark height={32} />
+            <span className="text-body text-muted-foreground">/ <b className="font-medium text-foreground">agora</b></span>
           </Link>
         }
         actions={<ThemeToggle />}
@@ -74,7 +74,7 @@ export default function Page() {
             <Badge tone="warning">needs review</Badge>
             {/* The regression this guards: a bare tailwind-merge sorts `text-body`
                 into the text-COLOUR group and drops `text-primary-foreground`,
-                rendering white on white. See TYPE_SCALE in @aisocratic/stoa. */}
+                rendering white on white. See TYPE_SCALE in @aisocratic/design. */}
             <span className={cn("rounded-md bg-primary px-2 py-1 text-primary-foreground", "text-body")}>
               merged colour survives
             </span>

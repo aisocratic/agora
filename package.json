@@ -31,14 +31,16 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test",
+    "verify": "pnpm design:check && pnpm typecheck && pnpm lint && pnpm test",
     "setup": "tsx scripts/setup.ts",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
-    "db:schema": "tsx scripts/dump-schema.ts"
+    "db:schema": "tsx scripts/dump-schema.ts",
+    "design:sync": "node scripts/sync-design.mjs",
+    "design:check": "node site/scripts/sync-design.mjs --check"
   },
   "dependencies": {
-    "@aisocratic/stoa": "file:../.stoa-packs/aisocratic-stoa-0.2.0.tgz",
+    "@aisocratic/design": "file:vendor/aisocratic-design-0.2.0.tgz",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

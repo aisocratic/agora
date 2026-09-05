@@ -7,7 +7,7 @@ export const body = Space_Grotesk({
   weight: ["400", "500"],
   subsets: ["latin"],
   display: "swap",
-  variable: "--stoa-font-body",
+  variable: "--aisocratic-font-body",
 })
 
 // Newsreader is variable 200–800 with a true italic. Only the 200 is loaded:
@@ -18,14 +18,14 @@ export const display = Newsreader({
   style: ["normal", "italic"],
   subsets: ["latin"],
   display: "swap",
-  variable: "--stoa-font-display",
+  variable: "--aisocratic-font-display",
 })
 
 export const code = JetBrains_Mono({
   weight: ["400", "500"],
   subsets: ["latin"],
   display: "swap",
-  variable: "--stoa-font-code",
+  variable: "--aisocratic-font-code",
 })
 
 export const fontClassName = `${body.variable} ${display.variable} ${code.variable}`
