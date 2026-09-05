@@ -29,3 +29,6 @@ yarn-error.log*
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Built from the shared React board during Pages deployment.
+site/assets/

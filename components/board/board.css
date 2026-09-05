@@ -1,0 +1,375 @@
+/* Document scrolling must settle before a pointer gesture measures card coordinates. */
+html:has(.agora-board) {
+  scroll-behavior: auto;
+}
+/* Sortable transforms must not become document scroll anchors. */
+.agora-board {
+  overflow-anchor: none;
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  text-align: left;
+}
+.agora-board *,
+.agora-dialog * {
+  box-sizing: border-box;
+}
+.agora-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.agora-toolbar h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 200;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+}
+.agora-toolbar p,
+.agora-help {
+  color: var(--muted-foreground);
+  margin: 0;
+}
+.agora-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.agora-btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--foreground);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.agora-btn:hover {
+  background: var(--secondary);
+}
+.agora-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.agora-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.agora-primary:hover {
+  background: color-mix(in srgb, var(--primary) 88%, var(--background));
+}
+.agora-danger {
+  color: var(--status-danger);
+}
+.agora-board button:focus-visible,
+.agora-board select:focus-visible,
+.agora-dialog :focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.agora-scroll {
+  overflow-x: auto;
+  padding: 3px 3px 1rem;
+  margin-inline: -3px;
+}
+.agora-columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(15rem, 1fr));
+  gap: 1rem;
+  min-width: 64rem;
+  align-items: start;
+}
+.agora-column {
+  min-height: 18rem;
+  max-height: 65vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  transition: border-color 0.12s ease;
+}
+.agora-column[data-over="true"] {
+  border-color: var(--primary);
+  background: var(--secondary);
+}
+.agora-column-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+}
+.agora-column-head h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+.agora-count {
+  color: var(--muted-foreground);
+  margin-left: 0.5rem;
+  font-family: var(--font-code);
+}
+.agora-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  flex: none;
+}
+.agora-icon:hover {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+.agora-icon:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.agora-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+.agora-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.agora-card {
+  padding: 0.875rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.025);
+  overflow-wrap: anywhere;
+}
+.agora-card[data-dragging="true"] {
+  opacity: 0.35;
+}
+.agora-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+}
+.agora-card-title {
+  flex: 1;
+  text-align: left;
+  color: var(--foreground);
+  font: inherit;
+  font-weight: 500;
+  border: 0;
+  background: none;
+  padding: 0.3rem 0;
+  cursor: pointer;
+  min-width: 0;
+}
+.agora-card-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.agora-drag {
+  touch-action: none;
+  cursor: grab;
+  margin-right: -0.4rem;
+}
+.agora-drag:active {
+  cursor: grabbing;
+}
+.agora-card-description {
+  color: var(--muted-foreground);
+  font-size: var(--text-micro);
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0.4rem 0 0.75rem;
+}
+.agora-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+.agora-card-foot select {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1;
+  font: inherit;
+  font-size: var(--text-micro);
+  color: var(--muted-foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.375rem;
+  min-height: 2rem;
+}
+.agora-empty {
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-micro);
+}
+.agora-notice {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  background: var(--secondary);
+  margin: 0 0 1rem;
+}
+.agora-help {
+  font-size: var(--text-micro);
+  margin-top: 0.5rem;
+}
+.agora-archive {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.agora-archive-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  overflow-wrap: anywhere;
+}
+.agora-archive-row p {
+  margin: 0;
+}
+.agora-dialog {
+  color: var(--foreground);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: calc(100% - 2rem);
+  max-width: 36rem;
+  max-height: calc(100dvh - 2rem);
+  padding: 1.5rem;
+  overflow: auto;
+  box-shadow: 0 20px 80px rgb(0 0 0 / 0.2);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+}
+.agora-dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(3px);
+}
+.agora-dialog h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 200;
+  line-height: 1.2;
+  margin: 0;
+}
+.agora-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.agora-fields {
+  display: grid;
+  gap: 1rem;
+}
+.agora-fields > div {
+  display: grid;
+  gap: 0.375rem;
+}
+.agora-fields input,
+.agora-fields textarea,
+.agora-fields select {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--foreground);
+  font: inherit;
+}
+.agora-fields textarea {
+  resize: vertical;
+  min-height: 8rem;
+}
+.agora-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+.agora-dialog-error {
+  color: var(--status-danger);
+  margin: 0.75rem 0 0;
+}
+.agora-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .agora-toolbar {
+    gap: 1rem;
+  }
+  .agora-toolbar > .agora-actions {
+    width: 100%;
+  }
+  .agora-toolbar > .agora-actions .agora-primary {
+    flex: 1;
+  }
+  .agora-columns {
+    grid-template-columns: repeat(4, minmax(17rem, 1fr));
+    min-width: 72rem;
+  }
+  .agora-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  .agora-card-foot select {
+    min-height: 2.5rem;
+  }
+  .agora-dialog {
+    padding: 1.25rem;
+  }
+  .agora-fields input,
+  .agora-fields textarea,
+  .agora-fields select {
+    font-size: 16px;
+  }
+}

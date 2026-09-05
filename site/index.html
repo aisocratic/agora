@@ -44,6 +44,7 @@
     <!-- Shared design tokens and site recipes, vendored verbatim. Must load before styles.css. -->
     <link rel="stylesheet" href="./vendor/design.css" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./assets/board.css" />
   </head>
 
   <body>
@@ -133,116 +134,23 @@
           <p class="hero-sub">A shared place to plan, review and ship. Cards carry the context; a dependency graph shows what is ready to work on next.</p>
           <div class="actions">
             <a class="btn btn-primary" href="https://github.com/aisocratic/agora">View on GitHub</a>
-            <a class="btn btn-outline" href="#agents">How agents use it</a>
+            <a class="btn btn-outline" href="#board">Open your board</a>
           </div>
-          <p class="hero-status"><span class="pill pill-caution">Early — not yet ready to run</span></p>
+          <p class="hero-status"><span class="pill pill-caution">Personal board · saved in your browser</span></p>
         </div>
       </section>
       <div class="page-shell"><div class="quick-start">
             <figure class="code" data-copy>
-              <figcaption class="code-head"><span class="code-label">Preview the scaffold</span></figcaption>
+              <figcaption class="code-head"><span class="code-label">Run your board locally</span></figcaption>
               <pre><code><span class="c-cmd">git</span> clone https://github.com/aisocratic/agora <span class="c-op">&amp;&amp;</span> <span class="c-cmd">cd</span> agora
 <span class="c-cmd">pnpm</span> install
 <span class="c-cmd">pnpm</span> dev</code></pre>
             </figure>
       </div></div>
 
-      <!-- ------------------------------------------------------ board mock -->
-      <section class="board-band">
-        <div class="page-shell board-figure">
-          <figure class="board" aria-labelledby="board-cap">
-            <div class="board-chrome" aria-hidden="true">
-              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-              <span class="board-chrome-label">agora · board</span>
-              <span class="board-chrome-hint">scroll →</span>
-            </div>
-
-            <div class="board-scroll">
-              <div class="board-cols">
-                <section class="col">
-                  <h3 class="col-head">Backlog <span class="col-count">2</span></h3>
-
-                  <article class="mock-card">
-                    <p class="mc-title">Import an existing <code>todos</code> table</p>
-                    <p class="mc-meta"><span class="chip chip-id">AG-30</span><span class="chip">epic</span></p>
-                  </article>
-
-                  <article class="mock-card">
-                    <p class="mc-title">Suggestions inbox: agents propose, humans dispose</p>
-                    <p class="mc-meta"><span class="chip chip-id">AG-33</span><span class="chip">epic</span></p>
-                  </article>
-                </section>
-
-                <section class="col">
-                  <h3 class="col-head">Todo <span class="col-count">2</span></h3>
-
-                  <article class="mock-card">
-                    <p class="mc-title">Wave scheduler over <code>Todo[]</code></p>
-                    <p class="mc-meta">
-                      <span class="chip chip-id">AG-41</span>
-                      <span class="chip chip-policy">opus · mid</span>
-                    </p>
-                  </article>
-
-                  <div class="dep" aria-hidden="true"><span class="dep-line"></span></div>
-
-                  <article class="mock-card is-blocked">
-                    <p class="mc-title">Dependency graph view</p>
-                    <p class="mc-meta">
-                      <span class="chip chip-id">AG-51</span>
-                      <span class="chip chip-blocked">blocked by AG-41</span>
-                    </p>
-                  </article>
-                </section>
-
-                <section class="col">
-                  <h3 class="col-head">Doing <span class="col-count">2</span></h3>
-
-                  <article class="mock-card">
-                    <p class="mc-title">Webhook adapter: HMAC over the raw body</p>
-                    <p class="mc-meta">
-                      <span class="chip chip-id">AG-44</span>
-                      <span class="chip chip-policy">sonnet · mid</span>
-                    </p>
-                  </article>
-
-                  <article class="mock-card">
-                    <p class="mc-title"><code>command</code> adapter: execFile, never a shell</p>
-                    <p class="mc-meta">
-                      <span class="chip chip-id">AG-47</span>
-                      <span class="chip chip-gate">needs review</span>
-                    </p>
-                  </article>
-                </section>
-
-                <section class="col">
-                  <h3 class="col-head">Review <span class="col-count">2</span></h3>
-
-                  <article class="mock-card">
-                    <p class="mc-title">Board version: one query, ETag, 304</p>
-                    <p class="mc-meta">
-                      <span class="chip chip-pr">PR #112</span>
-                      <span class="chip chip-merge">automerge</span>
-                    </p>
-                  </article>
-
-                  <article class="mock-card">
-                    <p class="mc-title">Config-driven effort and model vocabulary</p>
-                    <p class="mc-meta">
-                      <span class="chip chip-pr">PR #109</span>
-                      <span class="chip chip-gate">needs review</span>
-                    </p>
-                  </article>
-                </section>
-              </div>
-            </div>
-
-            <figcaption id="board-cap" class="board-cap">
-              The gate and the merge flag are separate questions. A card can be waiting for a human
-              to look at it before work starts, or cleared to merge itself when the checks go
-              green — never conflated.
-            </figcaption>
-          </figure>
+      <section id="board" class="board-band">
+        <div class="page-shell">
+          <div id="agora-board"><p class="agora-help">Loading your board…</p><noscript>Enable JavaScript to create and manage cards. Your board is saved in this browser.</noscript></div>
         </div>
       </section>
 
@@ -297,7 +205,7 @@
         <div class="page-shell">
           <div class="section-head">
             <span class="text-eyebrow">Agents</span>
-            <h2>How agents use it</h2>
+            <h2>The planned agent workflow</h2>
           <p >
             The CLI is an HTTP client, never a database client — it needs a token and a URL, not
             Postgres credentials. It ships as a single dependency-free file, so
@@ -370,7 +278,7 @@
         <div class="page-shell">
           <div class="section-head">
             <span class="text-eyebrow">Dispatch</span>
-            <h2>Dispatching</h2>
+            <h2>Planned dispatch adapters</h2>
           <p >
             Agora does not run agents. It tells something else to, through one small adapter
             interface.
@@ -425,23 +333,10 @@
       <!-- -------------------------------------------------------- security -->
       <section id="security" class="section">
         <div class="page-shell">
-          <div class="section-head">
-            <span class="text-eyebrow">Security</span>
-            <h2>Security model</h2>
-          </div>
-
+          <div class="section-head"><span class="text-eyebrow">Your data</span><h2>Saved in your browser</h2></div>
           <div class="callout">
-            <p class="prose">
-              Agora's trust boundary is <strong>the database and the deployment</strong>, not an
-              in-app permission system. There are no user accounts and no roles: anyone who can
-              reach the board can edit the board. Assignees are free text.
-            </p>
-            <p class="prose">
-              That is a deliberate choice, not an omission. Adding roles without an identity
-              provider is security theatre. Run it on localhost, behind Tailscale, or behind a proxy
-              that authenticates for you (<code>AGORA_AUTH=proxy</code>), or set a shared password
-              (<code>AGORA_AUTH=password</code>). Machine clients use bearer tokens.
-            </p>
+            <p class="prose">Your current board is private to this browser and device. Cards are stored locally; they are not sent to a server or shared with other visitors. Export a backup before clearing your browser data.</p>
+            <p class="prose">The hosted, shared board with a database and access controls is planned. The agent and dispatch examples describe that future platform.</p>
           </div>
         </div>
       </section>
@@ -534,5 +429,6 @@
     </footer>
 
     <script src="./main.js"></script>
+    <script type="module" src="./assets/board.js"></script>
   </body>
 </html>

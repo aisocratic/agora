@@ -5,6 +5,14 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "components/board/**"
+      - "lib/board*"
+      - "scripts/build-site.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "vendor/**"
+      - "tests/**"
+      - "playwright.config.ts"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -29,19 +37,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.1
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: pnpm
 
-      - name: Verify shared design assets
-        run: node site/scripts/sync-design.mjs --check
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify board and design
+        run: pnpm verify
+
+      - name: Install browser for card tests
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Test card workflows in Pages and the app
+        run: pnpm test:e2e
 
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
-      # The site is hand-written static HTML with no build step, so the source
-      # directory is the artifact.
+      # Playwright builds the Pages bundle from the same React board as the app.
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:

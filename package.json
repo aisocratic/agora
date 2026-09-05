@@ -32,12 +32,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "verify": "pnpm design:check && pnpm typecheck && pnpm lint && pnpm test",
-    "setup": "tsx scripts/setup.ts",
-    "migrate": "tsx scripts/migrate.ts",
-    "seed": "tsx scripts/seed.ts",
-    "db:schema": "tsx scripts/dump-schema.ts",
     "design:sync": "node scripts/sync-design.mjs",
-    "design:check": "node site/scripts/sync-design.mjs --check"
+    "design:check": "node site/scripts/sync-design.mjs --check",
+    "site:build": "node scripts/build-site.mjs"
   },
   "dependencies": {
     "@aisocratic/design": "file:vendor/aisocratic-design-0.2.0.tgz",
@@ -70,6 +67,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.5",
+    "esbuild": "0.28.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.0",
     "jsdom": "^30.0.1",

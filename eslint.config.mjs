@@ -12,8 +12,7 @@ const config = [
       "bin/**",
       "playwright-report/**",
       "test-results/**",
-      // The GitHub Pages landing site is hand-written static HTML/CSS/JS with
-      // no build step and no module system — it is not part of the app.
+      // Site content and generated assets; the shared board is linted in components/.
       "site/**",
       ".github/**",
     ],

@@ -1,146 +1,117 @@
 # Agora
 
-**A kanban board built for humans and coding agents.**
+**A kanban board for humans and coding agents.**
 
-Website: [aisocratic.github.io/agora](https://aisocratic.github.io/agora/)
+[Open your board](https://aisocratic.github.io/agora/#board)
 
-Most boards assume a person moves every card. Agora assumes some of the work is
-done by coding agents, and makes that a first-class part of the model: a card
-carries a PR link, an automerge flag, a review verdict, and its own model /
-effort / harness policy. A dependency graph decides what is actually workable
-right now, so an agent can ask the board what to do next instead of guessing.
+Agora currently provides a working personal board in your browser. Create cards
+with a title and details, move them through Backlog, Todo, Doing and Review,
+reorder them, and archive completed work. Restore archived cards or permanently
+delete them after confirmation. Drag handles support pointer, touch and keyboard;
+column selectors and arrow buttons provide an alternative to dragging.
 
-Turn the agent half off with one config flag and you have a fast, keyboard-driven
-kanban board for people.
+The GitHub Pages board and the Next.js app use the same React component and state
+logic. Cards are saved in local browser storage, separately for each origin and
+browser profile. They are **not shared between devices or users**. Export a JSON
+backup before clearing browser data. Import adds missing cards and preserves
+existing cards with the same IDs. If browser storage is unavailable or full,
+Agora keeps changes in the current tab and asks you to export them. Unreadable
+saved data is preserved for download before a fresh board can be started.
 
-> **Status: early.** The board is being extracted from a private codebase where
-> it has been in daily use. Phases land incrementally — see
-> [the roadmap](#roadmap). Not yet ready to run.
+## Run locally
 
-## Why it exists
-
-- **The dependency graph is the point.** Cards declare prerequisites. Agora
-  computes waves of genuinely-unblocked work, so parallel agents don't collide
-  and nothing starts before what it depends on is real.
-- **Review is a gate, not a column.** `needs_human_review` blocks work *before*
-  it starts; `automerge` governs only the merge at the end. The two are
-  deliberately separate, because "I want to look at this first" and "you may
-  merge this without me" are different questions.
-- **Agents get an API and a CLI, not a scraper.** Everything the web UI does is
-  a documented HTTP endpoint with token auth. `npx agora board` returns the plan
-  as JSON.
-- **You own the data.** One Postgres database, plain SQL, no ORM, no vendor.
-
-## Quick start
-
-```bash
-git clone https://github.com/aisocratic/agora && cd agora
-pnpm install
-docker compose up -d db        # or set DATABASE_URL to any Postgres 14+
-pnpm setup                     # writes .env.local, migrates, seeds a demo board
+```sh
+git clone https://github.com/aisocratic/agora
+cd agora
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. No database or account is needed for the personal board.
 
-## How agents use it
+To preview the GitHub Pages site, including the same interactive board:
 
-```bash
-npx agora login --url https://board.example.com
-npx agora board --json          # what's ready, in dependency order
-npx agora get <id>              # card, comments, dependencies, children
-npx agora comment <id> --author claude < notes.md
-npx agora move <id> review
+```sh
+pnpm site:build
+python3 -m http.server 4174 --directory site
 ```
 
-`agora skill install` drops a Claude Code skill into your project that teaches an
-agent the whole loop — pick a card, work it, open a PR, respect the review gate.
+Open http://localhost:4174. Rebuild after changing the shared board component.
+Assets use relative URLs so the site also works under `/agora/` on GitHub Pages.
+The Pages workflow installs dependencies, verifies source and design assets, builds
+both consumers, tests card workflows, and deploys the static site.
 
-## Dispatching
+## Verification
 
-Agora does not run agents. It tells something else to, through one small
-adapter interface:
-
-| adapter | what it does |
-|---|---|
-| `none` | default — no dispatch, a purely human board |
-| `webhook` | POSTs the card and its context to a URL you control, HMAC-signed |
-| `command` | runs a process on the server (opt-in; it executes code) |
-| `github-workflow` | triggers a `workflow_dispatch` |
-
-Claude Code and Codex ship as ~15-line examples in `examples/dispatch/`, not as
-built-in adapters — vendor CLI flags churn faster than releases.
-
-## Configuration
-
-`agora.config.ts` at the repo root: column and type labels, the people who can be
-assigned, whether the agent half is enabled, and the values your `effort` /
-`model` / `harness` fields accept. Changing that vocabulary never requires a
-migration.
-
-## Security model
-
-Agora's trust boundary is **the database and the deployment**, not an in-app
-permission system. There are no user accounts and no roles: anyone who can reach
-the board can edit the board. Assignees are free text.
-
-That is a deliberate choice, not an omission. Adding roles without an identity
-provider is security theatre. Run it on localhost, behind Tailscale, or behind a
-proxy that authenticates for you (`AGORA_AUTH=proxy`), or set a shared password
-(`AGORA_AUTH=password`). Machine clients use bearer tokens. See `docs/AUTH.md`.
-
-## Roadmap
-
-- [x] **Phase 0** — scaffold, fonts, design system ([`@aisocratic/design`](https://github.com/aisocratic/stoa))
-- [ ] **Phase 1** — the board on Postgres: columns, drag and drop, card editor, live refresh
-- [ ] **Phase 2** — auth, API tokens, CLI
-- [ ] **Phase 3** — configurable vocabulary, dispatcher adapters
-- [ ] **Phase 4** — the plan engine and the Claude Code skill
-- [ ] **Phase 5** — the suggestions inbox: agents propose, humans dispose
-- [ ] **Phase 6** — dependency graph view
-
-## Development
-
-```bash
-pnpm verify      # typecheck + lint + unit tests
-pnpm test:e2e    # Playwright
+```sh
+pnpm verify       # design integrity, typecheck, lint, state/storage unit tests
+pnpm build        # production Next.js app
+pnpm site:build   # shared React board bundled for the static site
+pnpm test:e2e     # card workflows in Pages desktop/mobile and the Next app
 ```
 
-Stack: Next.js 16, React 19, Tailwind v4, `pg` with hand-written SQL, dnd-kit,
-Postgres 14+. No ORM — the queries are SQL you can paste into psql.
+Local browser tests use installed Google Chrome. CI installs Playwright Chromium.
+The browser suite covers create/edit, validation/cancel, drag and touch reorder,
+column changes, reload persistence, archive/restore/delete, backup import/export,
+corrupt data, multiple tabs and responsive layout. Unit tests also cover storage
+failures and retaining unsaved edits.
 
-## License
+## Architecture
 
-MIT © AI Socratic. The look comes from [`@aisocratic/design`](https://github.com/aisocratic/stoa),
-the AI Socratic design system. Fonts are Space Grotesk, Newsreader and JetBrains
-Mono, all under the SIL Open Font License 1.1 and self-hosted at build time.
+- `components/board/board.tsx` and `board.css`: one board UI for both consumers.
+- `lib/board.ts`: validated card data and immutable lifecycle operations.
+- `lib/board-storage.ts`: storage interface and browser persistence, with explicit
+  error handling and storage-event updates between tabs.
+- `site/board-entry.tsx` and `scripts/build-site.mjs`: bundle the shared component
+  into `site/assets/board.js` and `board.css` with esbuild.
+
+The storage interface separates persistence from card behavior. A hosted shared
+board will require an authenticated API and database adapter; local storage is
+not a substitute for shared storage or access control.
+
+## Planned agent workflows
+
+The intended shared platform adds Postgres persistence, authentication, API tokens,
+a CLI and dependency-aware scheduling. Cards will carry PR links, review gates,
+automerge policy, and model/effort/harness settings. Dispatcher adapters will
+connect boards to existing agent runners. These server and agent workflows are
+planned; the examples on the project site describe that direction.
+
+- [x] Shared AI Socratic design and responsive browser board
+- [x] Card editor, drag and reorder, archive and backup workflows
+- [ ] Postgres persistence, shared board updates and authentication
+- [ ] API tokens and CLI
+- [ ] Agent policies and dispatch adapters
+- [ ] Dependency planning and graph view
 
 ## Shared design
 
 The app and [GitHub Pages site](https://aisocratic.github.io/agora/) consume
 [`@aisocratic/design`](https://github.com/aisocratic/stoa). The app imports its
-React components and Tailwind theme; the static site imports the same tokens and
-site recipes in `site/vendor/design.css`. Header, centered hero, buttons, type,
-themes and footer are shared with Stoa and Atlas.
+React chrome and Tailwind theme; the site imports the same tokens and site recipes
+in `site/vendor/design.css`. Both use the same board styles, which reference shared
+color, typography and spacing roles. Light mode uses the AI Socratic warm palette.
 
-The package archive is pinned inside `vendor/`, so `pnpm install --frozen-lockfile`
-works from a clean clone without a sibling checkout or an unpublished registry
-package. `vendor/design.json` records its SHA-256; `site/vendor/design.json` records
-the exact upstream CSS SHA-256. Fonts fill the package's `--aisocratic-font-*` slots.
+The package archive is pinned inside `vendor/`, so a clean clone works without a
+sibling checkout or an unpublished registry package. `vendor/design.json` records
+the archive SHA-256; `site/vendor/design.json` records the exact upstream CSS hash.
+Fonts fill the package's `--aisocratic-font-*` slots on `<html>`.
 
-To refresh both copies from a Stoa checkout:
+To refresh both copies from a built Stoa checkout:
 
 ```sh
-# In the Stoa checkout:
+# In Stoa:
 pnpm build
-# In Agora (the path can point anywhere):
+# In Agora:
 pnpm design:sync /path/to/stoa
-pnpm design:check
 pnpm verify
 pnpm build
+pnpm site:build
+pnpm test:e2e
 ```
 
-Commit the archive, both metadata files, CSS, manifest and lockfile together.
-Keep only Agora content and board preview styles in `site/styles.css`; update
-shared chrome in Stoa. The static site needs no build step and its existing Pages
-workflow deploys `site/`. Preview with `python3 -m http.server 4174 --directory site`.
+Commit the archive, metadata, CSS, manifest and lockfile together. Keep project
+content layout in `site/styles.css`, shared board styling in
+`components/board/board.css`, and shared family chrome in Stoa.
+
+MIT © AI Socratic.
