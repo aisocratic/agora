@@ -34,6 +34,8 @@ published the verified source. The live visual audit then corrected selected-vie
 hover contrast in dark mode and rechecked the rebuilt graph in Chrome. The public
 review-gate field name and human-only suggestion review copy were also corrected.
 Pages now watches every shared component/library change so graph updates publish.
+The release versions the board asset URLs to refresh returning browsers
+that otherwise retain the previous JavaScript/CSS in their HTTP cache.
 Subsequent CI/deployment records are available in the repository Actions history.
 
 This release provides source for the shared self-hosted application and publishes
