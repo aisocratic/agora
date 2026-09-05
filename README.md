@@ -10,9 +10,15 @@ reorder them, and archive completed work. Restore archived cards or permanently
 delete them after confirmation. Drag handles support pointer, touch and keyboard;
 column selectors and arrow buttons provide an alternative to dragging.
 
+The Next.js app also provides a **shared Postgres board** when `DATABASE_URL` is
+configured: transactional card updates, live refresh between clients, revision
+conflict detection and an HTTP API. See [shared board setup and API](docs/DATABASE.md).
+The GitHub Pages board remains personal browser storage.
+
 The GitHub Pages board and the Next.js app use the same React component and state
-logic. Cards are saved in local browser storage, separately for each origin and
-browser profile. They are **not shared between devices or users**. Export a JSON
+logic. In personal mode, cards are saved in local browser storage, separately for
+each origin and browser profile. Personal boards are **not shared between devices
+or users**. Shared mode uses PostgreSQL and synchronizes through the API. Export a JSON
 backup before clearing browser data. Import adds missing cards and preserves
 existing cards with the same IDs. If browser storage is unavailable or full,
 Agora keeps changes in the current tab and asks you to export them. Unreadable
@@ -28,6 +34,8 @@ pnpm dev
 ```
 
 Open http://localhost:3000. No database or account is needed for the personal board.
+For shared mode, configure [authentication](docs/AUTH.md), export `DATABASE_URL`,
+run `pnpm db:migrate`, then `pnpm dev` (bound to loopback).
 
 To preview the GitHub Pages site, including the same interactive board:
 
@@ -48,6 +56,9 @@ pnpm verify       # design integrity, typecheck, lint, state/storage unit tests
 pnpm build        # production Next.js app
 pnpm site:build   # shared React board bundled for the static site
 pnpm test:e2e     # card workflows in Pages desktop/mobile and the Next app
+pnpm test:db      # real Postgres integration; requires TEST_DATABASE_URL
+pnpm test:e2e:shared # shared Postgres browser workflows; requires TEST_DATABASE_URL
+pnpm test:e2e:suggestions # human review workflows; requires TEST_DATABASE_URL
 ```
 
 Local browser tests use installed Google Chrome. CI installs Playwright Chromium.
@@ -62,27 +73,41 @@ failures and retaining unsaved edits.
 - `lib/board.ts`: validated card data and immutable lifecycle operations.
 - `lib/board-storage.ts`: storage interface and browser persistence, with explicit
   error handling and storage-event updates between tabs.
+- `lib/remote-board-store.ts`: asynchronous API client with ETag polling, pending
+  state and revision conflicts that retain editor drafts.
+- `lib/server/board-repository.ts`, `db/migrations` and `app/api`: relational
+  Postgres persistence, transactional operations and the shared HTTP API.
 - `site/board-entry.tsx` and `scripts/build-site.mjs`: bundle the shared component
   into `site/assets/board.js` and `board.css` with esbuild.
 
-The storage interface separates persistence from card behavior. A hosted shared
-board will require an authenticated API and database adapter; local storage is
-not a substitute for shared storage or access control.
+The personal and shared modes use separate persistence controllers and the same
+board UI. The shared API supports password sessions, named API tokens and a trusted proxy
+contract. Production requires explicit secure configuration and refuses `none`.
+The [standalone HTTP CLI](docs/CLI.md) can be copied or packed without the app.
 
-## Planned agent workflows
+## Agent workflows
 
-The intended shared platform adds Postgres persistence, authentication, API tokens,
-a CLI and dependency-aware scheduling. Cards will carry PR links, review gates,
-automerge policy, and model/effort/harness settings. Dispatcher adapters will
-connect boards to existing agent runners. These server and agent workflows are
-planned; the examples on the project site describe that direction.
+The shared platform persists task metadata, dependencies, parent links and comments
+through its authenticated HTTP API, rich editor and dependency-free CLI. Configure
+[workflow vocabulary](docs/CONFIGURATION.md) and [dispatch adapters](docs/DISPATCH.md)
+for agent tasks, with human-review gates and durable dispatch receipts.
+The [plan engine](docs/PLANNING.md) groups leaf tasks into dependency waves,
+retains human assignments and review gates, and classifies merge candidates.
+`agora skill install` installs the portable Claude Code workflow skill. The
+[suggestions inbox](docs/SUGGESTIONS.md) lets agents propose work for human
+review before it becomes a card. The dependency graph shows prerequisite direction,
+readiness and cycle feedback, with navigation into the same card editor. See the
+[roadmap evidence](docs/ROADMAP.md).
 
 - [x] Shared AI Socratic design and responsive browser board
 - [x] Card editor, drag and reorder, archive and backup workflows
-- [ ] Postgres persistence, shared board updates and authentication
-- [ ] API tokens and CLI
-- [ ] Agent policies and dispatch adapters
-- [ ] Dependency planning and graph view
+- [x] Postgres persistence and shared board updates
+- [x] Authentication
+- [x] API tokens and CLI
+- [x] Configurable workflow, agent policies and dispatch adapters
+- [x] Dependency planning and portable Claude Code skill
+- [x] Suggestions inbox with human review
+- [x] Dependency graph with desktop/mobile acceptance
 
 ## Shared design
 

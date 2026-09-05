@@ -1,46 +1,73 @@
 # Contributing to Agora
 
-Thanks for taking a look. Agora is early, so the most useful contributions right
-now are bug reports from actually running it, and feedback on the data model.
+Agora includes a personal browser board and a shared PostgreSQL application for
+human and agent workflows. Bug reports from running either mode are welcome.
 
 ## Getting set up
 
-```bash
-pnpm install
-docker compose up -d db
-pnpm setup
+Use Node 20.9+ and the pnpm version in `package.json`. For the personal board:
+
+```sh
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-## Before opening a pull request
+For shared development, start the optional local database and migrate it:
 
-```bash
-pnpm verify     # typecheck + lint + unit tests
-pnpm test:e2e   # Playwright, needs a running database
+```sh
+docker compose up -d db
+export DATABASE_URL=postgres://agora:agora@localhost:5432/agora
+export AGORA_AUTH=none
+pnpm db:migrate
+pnpm dev
 ```
 
-CI runs both against a real Postgres. Because Agora writes plain SQL rather than
-using an ORM, database behaviour is testable — if you touch a query, add a test
-that exercises it against the real schema rather than a mock.
+The development listener binds to loopback. Production requires password or
+trusted-proxy authentication; see [setup](docs/DATABASE.md) and [auth](docs/AUTH.md).
+
+## Before opening a pull request
+
+```sh
+pnpm verify
+pnpm build
+pnpm test:e2e
+```
+
+The personal app and Pages browser tests start their own servers. For shared
+changes, use a separate local test database and run these suites sequentially:
+
+```sh
+export TEST_DATABASE_URL=postgres://agora:agora@localhost:5432/agora_test
+pnpm verify
+pnpm test:db
+pnpm test:e2e:shared
+pnpm test:e2e:suggestions
+```
+
+Create the test database first; tests create and remove unique schemas inside it.
+Without `TEST_DATABASE_URL`, unit verification skips database suites. GitHub CI
+provides PostgreSQL and runs the full verification and browser suites. Browser
+tests use installed Google Chrome locally and Playwright Chromium in CI. Avoid
+concurrent browser commands because they share production build output.
 
 ## Conventions
 
-- **SQL, not an ORM.** Queries live in `lib/db/*.ts` as parameterised SQL. Never
-  interpolate a value into a query string; dynamic column names come from a
-  frozen allowlist.
-- **Migrations are append-only.** Add `db/migrations/NNNN_description.sql`; never
-  edit an applied file. Run `pnpm db:schema` afterwards and commit the result.
-- **Comments explain why, not what.** Several files carry load-bearing comments
-  about non-obvious behaviour — a missing `onDragOver` handler, an imperative ref
-  that exists to avoid re-renders. If you are tempted to "clean one up", read it
-  first; it is probably describing a bug that was fixed by removing something.
-- **The type scale.** Sizes come from the `text-*` scale in `app/globals.css`.
-  If you add a step, add it to `TYPE_SCALE` in `lib/utils.ts` too — the test in
-  `tests/cn-type-scale.test.ts` explains what breaks otherwise.
+- Keep SQL parameterized in `lib/server/`; test database behavior against real
+  PostgreSQL when changing queries or transactions.
+- Append migrations in `db/migrations/` with the next numbered filename. Never
+  rewrite an applied migration; checksums enforce migration history.
+- Use the shared planner for dependency readiness and dispatch eligibility.
+  Preserve human assignments, review gates, and revision conflict behavior.
+- Keep the personal and shared board UI consistent. Changes to shared components
+  must work on desktop and mobile in both the app and Pages.
+- Use vendored Stoa design tokens and recipes. See the README for synchronized
+  package and site asset updates.
+- Record phase acceptance evidence in `docs/phases/` and keep public behavior
+  claims consistent with verified implementation.
 
 ## Reporting a security issue
 
-See SECURITY.md — please do not open a public issue.
+See [SECURITY.md](SECURITY.md); please do not open a public issue.
 
 ## License
 

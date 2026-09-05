@@ -1,0 +1,28 @@
+.agora-suggestions { margin:auto; width:min(68rem,calc(100vw - 2rem)); max-height:calc(100dvh - 2rem); padding:0; border:1px solid var(--border); border-radius:var(--radius-xl); background:var(--background); color:var(--foreground); }
+.agora-suggestions::backdrop { background:rgb(0 0 0/.5); }
+.suggestions-heading { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; padding:1.25rem; border-bottom:1px solid var(--border); }
+.suggestions-heading h2 { font-family:var(--aisocratic-font-display); font-size:1.7rem; }
+.suggestions-heading p,.suggestions-help,.suggestions-empty { color:var(--muted-foreground); }
+.suggestions-layout { display:grid; grid-template-columns:minmax(14rem,1fr) minmax(0,2fr); }
+.suggestions-list { padding:1.25rem; border-right:1px solid var(--border); }
+.suggestions-list>label { display:block; margin-bottom:.4rem; font-size:.875rem; }
+.suggestions-list ul { list-style:none; padding:0; margin:1rem 0; display:grid; gap:.5rem; }
+.suggestions-list li button { display:flex; width:100%; flex-direction:column; gap:.35rem; text-align:left; border:1px solid var(--border); border-radius:var(--radius-md); padding:.8rem; background:var(--card); overflow-wrap:anywhere; }
+.suggestions-list li button[aria-pressed=true] { outline:2px solid var(--ring); outline-offset:1px; }
+.suggestions-list li span,.suggestions-provenance span { font-size:.8rem; color:var(--muted-foreground); }
+.suggestions-review { padding:1.25rem; min-width:0; }
+.suggestions-provenance { display:flex; flex-wrap:wrap; gap:.4rem 1rem; align-items:center; margin-bottom:1rem; }
+.suggestions-reason { padding:.8rem; border-radius:var(--radius-md); background:var(--muted); margin-bottom:1rem; white-space:pre-wrap; overflow-wrap:anywhere; }
+.suggestions-original { margin:1rem 0; padding:.8rem; border:1px solid var(--border); border-radius:var(--radius-md); }
+.suggestions-original p,.suggestions-decision p { white-space:pre-wrap; overflow-wrap:anywhere; margin-top:.6rem; }
+.suggestions-form { display:grid; gap:.5rem; }
+.suggestions-form>label { font-size:.875rem; font-weight:500; margin-top:.5rem; }
+.agora-suggestions input:not([type=checkbox]),.agora-suggestions textarea,.agora-suggestions select { width:100%; border:1px solid var(--input); border-radius:var(--radius-md); background:var(--card); color:var(--foreground); padding:.55rem .65rem; font:inherit; }
+.agora-suggestions input:focus-visible,.agora-suggestions textarea:focus-visible,.agora-suggestions select:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
+.suggestions-buttons { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.6rem; margin-top:.75rem; }
+.suggestions-help { font-size:.8rem; margin-top:.75rem; }
+.suggestions-error { padding:.8rem; margin-bottom:1rem; border:1px solid var(--destructive); border-radius:var(--radius-md); }
+.suggestions-decision h3 { font-size:1.15rem; font-weight:600; }
+.suggestions-decision h4 { margin-top:1rem; font-weight:600; }
+.suggestions-decision button { margin-top:1rem; }
+@media(max-width:700px) { .suggestions-layout { grid-template-columns:1fr; } .suggestions-list { border-right:0; border-bottom:1px solid var(--border); } .suggestions-list ul { max-height:12rem; overflow:auto; } .suggestions-heading h2 { font-size:1.5rem; } .suggestions-buttons .agora-btn { min-height:44px; } }

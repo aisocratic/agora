@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
+import { DependencyGraph } from "../graph/dependency-graph"
+import { SuggestionsInbox } from "../suggestions/inbox"
+import { createContext, useContext, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import {
   DndContext,
   DragOverlay,
@@ -23,7 +25,6 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { Archive, ArrowDown, ArrowUp, Download, GripVertical, Plus, Upload, X } from "lucide-react"
 import {
-  COLUMNS,
   EMPTY_BOARD,
   isColumn,
   parseBoard,
@@ -32,8 +33,13 @@ import {
   type CardDraft,
   type ColumnId,
 } from "../../lib/board"
-import { BoardStore, browserStorage } from "../../lib/board-storage"
+import { RemoteBoardStore } from "../../lib/remote-board-store"
+import { BoardStore, browserStorage, type BoardController } from "../../lib/board-storage"
+import { DEFAULT_WORKFLOW, type Workflow } from "../../lib/workflow"
+import { TaskFields } from "./task-fields"
 import "./board.css"
+
+const WorkflowContext = createContext({ workflow: DEFAULT_WORKFLOW, columns: DEFAULT_WORKFLOW.columns.map(({ id, label }) => ({ id, label })) })
 
 const collisionDetection: CollisionDetection = (args) => {
   const hits = pointerWithin(args).filter((hit) => hit.id !== args.active.id)
@@ -107,30 +113,48 @@ function CardEditor({
   column,
   onSave,
   onClose,
+  board,
+  onComment,
+  onDispatch,
 }: {
+  onComment?: (body: string) => Promise<void>
+  onDispatch?: (key: string) => Promise<string>
+  board: import("../../lib/board").BoardData
   card?: BoardCard
   column: ColumnId
-  onSave: (draft: CardDraft) => void
+  onSave: (draft: CardDraft) => void | Promise<void>
   onClose: () => void
 }) {
+  const { workflow, columns } = useContext(WorkflowContext)
   const [draft, setDraft] = useState<CardDraft>({
     title: card?.title ?? "",
     description: card?.description ?? "",
     column: card?.column ?? column,
+    type: card?.type, assignee: card?.assignee, effort: card?.effort, model: card?.model, harness: card?.harness,
+    prUrl: card?.prUrl, automerge: card?.automerge, needsHumanReview: card?.needsHumanReview,
+    parentId: card?.parentId, dependencies: card?.dependencies,
   })
+  const [comment, setComment] = useState("")
+  const [dispatchMessage, setDispatchMessage] = useState("")
+  const dispatchKey = useRef<string | null>(null)
   const [error, setError] = useState("")
+  const [saving, setSaving] = useState(false)
+  const draftChanged = !!card && (Object.keys(draft) as (keyof CardDraft)[]).some((key) => JSON.stringify(draft[key]) !== JSON.stringify(card[key]))
   const fieldId = useId()
   return (
-    <Modal title={card ? "Edit card" : "New card"} onClose={onClose}>
+    <Modal title={card ? "Edit card" : "New card"} onClose={() => { if (!saving) onClose() }}>
       <form
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault()
+          if (saving) return
+          setSaving(true)
+          setError("")
           try {
-            onSave(draft)
+            await onSave(draft)
             onClose()
           } catch (cause) {
             setError(cause instanceof Error ? cause.message : "Could not save this card.")
-          }
+          } finally { setSaving(false) }
         }}
       >
         <div className="agora-fields">
@@ -167,7 +191,7 @@ function CardEditor({
                 if (isColumn(event.target.value)) setDraft({ ...draft, column: event.target.value })
               }}
             >
-              {COLUMNS.map((item) => (
+              {columns.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.label}
                 </option>
@@ -175,20 +199,36 @@ function CardEditor({
             </select>
           </div>
         </div>
+        <TaskFields draft={draft} onChange={setDraft} board={board} card={card} workflow={workflow} prefix={fieldId} />
         {error && (
           <p className="agora-dialog-error" role="alert">
             {error}
           </p>
         )}
         <div className="agora-dialog-actions">
-          <button className="agora-btn" type="button" onClick={onClose}>
+          <button className="agora-btn" type="button" disabled={saving} onClick={onClose}>
             Cancel
           </button>
-          <button className="agora-btn agora-primary" type="submit">
-            {card ? "Save changes" : "Create card"}
+          <button className="agora-btn agora-primary" type="submit" disabled={saving}>
+            {saving ? "Saving…" : card ? "Save changes" : "Create card"}
           </button>
         </div>
       </form>
+      {card && <section className="agora-comments" aria-label="Card comments">
+        <h3>Comments</h3>
+        {(board.cards.find((item) => item.id === card.id)?.comments ?? []).map((item) => <article key={item.id}><p><b>{item.author}</b> · <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time></p><p style={{ whiteSpace: "pre-wrap" }}>{item.body}</p></article>)}
+        <label htmlFor={`${fieldId}-comment`}>Add a comment</label>
+        <textarea id={`${fieldId}-comment`} maxLength={10000} value={comment} onChange={(event) => setComment(event.target.value)} />
+        <button type="button" className="agora-btn" disabled={saving || !comment.trim()} onClick={async () => {
+          setSaving(true); setError("")
+          try { await onComment?.(comment); setComment("") } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not add this comment.") } finally { setSaving(false) }
+        }}>Add comment</button>
+        {onDispatch && <div className="agora-dispatch"><button type="button" className="agora-btn" disabled={saving || draftChanged} onClick={async () => {
+          setSaving(true); setDispatchMessage("")
+          dispatchKey.current ??= crypto.randomUUID()
+          try { setDispatchMessage(await onDispatch(dispatchKey.current)) } catch (cause) { setDispatchMessage(cause instanceof Error ? cause.message : "Dispatch outcome could not be confirmed; check before retrying.") } finally { setSaving(false) }
+        }}>Dispatch saved task</button><p>Dispatch uses the saved task. Save any changes first.</p>{dispatchMessage && <p role="status">{dispatchMessage}</p>}</div>}
+      </section>}
     </Modal>
   )
 }
@@ -206,6 +246,7 @@ function SortableCard({
   onEdit: () => void
   onAction: (action: BoardAction) => void
 }) {
+  const { columns } = useContext(WorkflowContext)
   const {
     attributes,
     listeners,
@@ -258,7 +299,7 @@ function SortableCard({
               })
           }}
         >
-          {COLUMNS.map((column) => (
+          {columns.map((column) => (
             <option key={column.id} value={column.id}>
               {column.label}
             </option>
@@ -360,12 +401,13 @@ function Column({
   )
 }
 
-type Editor = { card?: BoardCard; column: ColumnId }
-export function Board({ store: providedStore }: { store?: BoardStore }) {
-  const [store] = useState(() => providedStore ?? makeStore())
+type Editor = { card?: BoardCard; column: ColumnId; revision?: number; newId?: string }
+export function Board({ store: providedStore, mode = "local", workflow: providedWorkflow = DEFAULT_WORKFLOW }: { store?: BoardController; mode?: "local" | "shared"; workflow?: Workflow }) {
+  const [store] = useState<BoardController>(() => providedStore ?? (mode === "shared" ? new RemoteBoardStore() : makeStore()))
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot)
   useEffect(() => store.connect(), [store])
   const [editor, setEditor] = useState<Editor | null>(null)
+  const [view, setView] = useState<"board" | "graph">("board")
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [confirmation, setConfirmation] = useState<BoardCard | "reset" | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -376,12 +418,15 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
-  const { board, ready, error, readOnly, unsaved } = snapshot
+  const { board, ready, error, readOnly, unsaved, pending } = snapshot
+  const workflow = snapshot.workflow ?? providedWorkflow
+  const columns = [...workflow.columns.map(({ id, label }) => ({ id, label })), ...[...new Set(board.cards.map((card) => card.column))].filter((id) => !workflow.columns.some((column) => column.id === id)).map((id) => ({ id, label: `${id} (unconfigured)` }))]
+  const initialColumn = workflow.columns.find((column) => column.role === "backlog")?.id ?? workflow.columns[0].id
   const archived = board.cards.filter((card) => card.archived)
   const active = board.cards.find((card) => card.id === activeId)
-  const mutate = (action: BoardAction) => {
+  const mutate = async (action: BoardAction) => {
     try {
-      store.dispatch(action)
+      await store.dispatch(action)
       setMessage(
         action.type === "archive"
           ? "Card archived. You can restore it from Archive."
@@ -416,7 +461,7 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
     mutate({ type: "move", id: String(dragged.id), column: columnId, position })
   }
   return (
-    <div className="agora-board" aria-label="Agora board">
+    <WorkflowContext.Provider value={{ workflow, columns }}><div className="agora-board" aria-label="Agora board">
       <div className="agora-toolbar">
         <div>
           <h2>Your board</h2>
@@ -425,10 +470,19 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
               ? "Loading your board…"
               : unsaved
                 ? "Unsaved changes in this tab"
-                : "Saved in this browser · private to this device"}
+                : pending ? "Saving to shared board…"
+                  : mode === "shared" ? "Shared board · saved in Postgres · updates automatically"
+                    : "Saved in this browser · private to this device"}
           </p>
         </div>
         <div className="agora-actions">
+          {mode === "shared" && <SuggestionsInbox board={board} revision={snapshot.revision} workflow={workflow} ready={ready} onRefresh={async () => { await store.refresh?.(); return store.getSnapshot().revision ?? 0 }} onOpenCard={async (id) => {
+            await store.refresh?.(); const latest = store.getSnapshot(); const card = latest.board.cards.find(card => card.id === id)
+            if (card) setEditor({ card, column: card.column, revision: latest.revision })
+            else setMessage("That accepted card is no longer on the board. Its suggestion history is retained.")
+          }} />}
+
+
           <button
             className="agora-btn"
             type="button"
@@ -446,7 +500,7 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
           <button
             className="agora-btn"
             type="button"
-            disabled={!ready || readOnly}
+            disabled={!ready || readOnly || pending}
             onClick={() => file.current?.click()}
           >
             <Upload size={16} />
@@ -455,8 +509,8 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
           <button
             className="agora-btn agora-primary"
             type="button"
-            disabled={!ready || readOnly}
-            onClick={() => setEditor({ column: "backlog" })}
+            disabled={!ready || readOnly || pending}
+            onClick={() => setEditor({ column: initialColumn, revision: snapshot.revision, newId: crypto.randomUUID() })}
           >
             <Plus size={16} />
             New card
@@ -479,7 +533,7 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
             const current = store.getSnapshot().board
             const ids = new Set(current.cards.map((card) => card.id))
             const additions = incoming.cards.filter((card) => !ids.has(card.id))
-            store.replace(JSON.stringify({ version: 1, cards: [...current.cards, ...additions] }))
+            await store.replace(JSON.stringify({ version: 1, cards: [...current.cards, ...additions] }))
             setMessage(`Imported ${additions.length} cards. Existing cards were kept.`)
           } catch {
             setMessage("Could not import this backup. Your existing board has not changed.")
@@ -491,6 +545,7 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
           <p>{error}</p>
           {readOnly && (
             <div className="agora-actions">
+
               <button className="agora-btn" onClick={download}>
                 Download saved data
               </button>
@@ -513,7 +568,9 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
           {message}
         </p>
       )}
-      {ready && !readOnly && (
+      {ready && !readOnly && <div className="agora-view-switch" role="group" aria-label="Board view"><button className="agora-btn" aria-pressed={view === "board"} onClick={() => setView("board")}>Board</button><button className="agora-btn" aria-pressed={view === "graph"} onClick={() => setView("graph")}>Graph</button></div>}
+      {ready && !readOnly && view === "graph" && <DependencyGraph board={board} workflow={workflow} onOpenCard={card => setEditor({ card, column: card.column, revision: snapshot.revision })} />}
+      {ready && !readOnly && view === "board" && (
         <>
           <DndContext
             sensors={sensors}
@@ -533,16 +590,16 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
               role="region"
               aria-label="Board columns; scroll horizontally to see all columns"
             >
-              <div className="agora-columns">
-                {COLUMNS.map((column) => (
+              <div className="agora-columns" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(var(--agora-column-width, 15rem), 1fr))`, minWidth: `calc(${columns.length} * (var(--agora-column-width, 15rem) + 1rem))` }}>
+                {columns.map((column) => (
                   <Column
                     key={column.id}
                     {...column}
                     cards={board.cards.filter(
                       (card) => card.column === column.id && !card.archived,
                     )}
-                    onNew={() => setEditor({ column: column.id })}
-                    onEdit={(card) => setEditor({ card, column: card.column })}
+                    onNew={() => setEditor({ column: column.id, revision: snapshot.revision, newId: crypto.randomUUID() })}
+                    onEdit={(card) => setEditor({ card, column: card.column, revision: snapshot.revision })}
                     onAction={mutate}
                   />
                 ))}
@@ -565,6 +622,7 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
               <div className="agora-archive-row" key={card.id}>
                 <p>{card.title}</p>
                 <div className="agora-actions">
+
                   <button
                     className="agora-btn"
                     onClick={() => mutate({ type: "restore", id: card.id })}
@@ -591,16 +649,33 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
       )}
       {editor && (
         <CardEditor
-          key={editor.card?.id ?? "new"}
+          key={editor.card?.id ?? editor.newId}
           {...editor}
+          board={board}
+          onComment={editor.card ? async (body) => {
+            try {
+              await store.dispatch({ type: "comment", id: editor.card!.id, comment: { id: crypto.randomUUID(), body, author: "You", createdAt: new Date().toISOString() } }, editor.revision)
+              setEditor({ ...editor, revision: store.getSnapshot().revision })
+            } catch (error) { setEditor({ ...editor, revision: store.getSnapshot().revision }); throw error }
+          } : undefined}
+          onDispatch={editor.card && store.launch ? async (key) => {
+            const result = await store.launch!(editor.card!.id, key, editor.revision)
+            return `${result.status}: ${result.message} Dispatch ID: ${result.id}`
+          } : undefined}
           onClose={() => setEditor(null)}
-          onSave={(draft) => {
-            store.dispatch(
+          onSave={async (draft) => {
+            try {
+            await store.dispatch(
               editor.card
                 ? { type: "edit", id: editor.card.id, draft }
-                : { type: "create", id: crypto.randomUUID(), draft },
+                : { type: "create", id: editor.newId!, draft },
+              editor.revision,
             )
             setMessage(editor.card ? "Card updated." : "Card created.")
+            } catch (error) {
+              setEditor({ ...editor, revision: store.getSnapshot().revision })
+              throw error
+            }
           }}
         />
       )}
@@ -620,10 +695,11 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
             </button>
             <button
               className="agora-btn agora-danger"
-              onClick={() => {
+              disabled={pending}
+              onClick={async () => {
                 try {
-                  if (confirmation === "reset") store.replace(JSON.stringify(EMPTY_BOARD))
-                  else store.dispatch({ type: "delete", id: confirmation.id })
+                  if (confirmation === "reset") await store.replace(JSON.stringify(EMPTY_BOARD))
+                  else await store.dispatch({ type: "delete", id: confirmation.id })
                   setConfirmation(null)
                   setMessage("Board updated.")
                 } catch {
@@ -637,6 +713,6 @@ export function Board({ store: providedStore }: { store?: BoardStore }) {
           </div>
         </Modal>
       )}
-    </div>
+    </div></WorkflowContext.Provider>
   )
 }
