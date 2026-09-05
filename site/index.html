@@ -205,7 +205,7 @@
         <div class="page-shell">
           <div class="section-head">
             <span class="text-eyebrow">Agents</span>
-            <h2>The planned agent workflow</h2>
+            <h2>The agent workflow</h2>
           <p >
             The CLI is an HTTP client, never a database client — it needs a token and a URL, not
             Postgres credentials. It ships as a single dependency-free file. Copy <code>cli/agora.mjs</code>
@@ -235,37 +235,41 @@
 
             <figure class="code code-json" data-copy>
               <figcaption class="code-head">
-                <span class="code-label">agora board --json</span>
+                <span class="code-label">agora board --json · selected fields</span>
               </figcaption>
               <pre><code class="language-json">{
   "readyToMerge": [
     { "id": "AG-38", "automerge": true,
       "title": "Board version: one query, ETag, 304",
-      "pr_url": "https://github.com/aisocratic/agora/pull/112" }
+      "prUrl": "https://github.com/aisocratic/agora/pull/112" }
   ],
   "waves": [
     [ { "id": "AG-41", "effort": "mid", "model": "opus",
         "title": "Wave scheduler over Todo[]" },
       { "id": "AG-44", "effort": "mid", "model": "sonnet",
         "title": "Webhook adapter: HMAC the raw body" } ],
-    [ { "id": "AG-45", "depends_on": ["AG-44"],
+    [ { "id": "AG-45", "dependencies": ["AG-44"],
         "title": "github-workflow preset" } ]
   ],
   "blocked": [
-    { "id": "AG-51", "blockedBy": ["AG-41"],
+    { "id": "AG-51", "prerequisites": ["AG-22"],
+      "reasons": [{ "code": "blocked-prerequisite",
+        "message": "Complete or resolve these task and parent dependencies before dispatch.",
+        "relatedIds": ["AG-22"] }],
       "title": "Dependency graph view" }
   ],
   "needsBreakdown": [
     { "id": "AG-33", "type": "epic",
       "title": "Suggestions inbox",
-      "reason": "no leaf tasks" }
+      "reasons": [{ "code": "needs-breakdown",
+        "message": "This epic needs executable child tasks.", "relatedIds": [] }] }
   ],
   "humanAssigned": [
     { "id": "AG-22", "assignee": "fed",
       "title": "Pick the demo hostname" }
   ],
   "gated": [
-    { "id": "AG-47", "needs_human_review": true,
+    { "id": "AG-47", "needsHumanReview": true,
       "title": "command adapter: execFile, never a shell" }
   ]
 }</code></pre>
@@ -279,7 +283,7 @@
         <div class="page-shell">
           <div class="section-head">
             <span class="text-eyebrow">Dispatch</span>
-            <h2>Planned dispatch adapters</h2>
+            <h2>Dispatch adapters</h2>
           <p >
             Agora does not run agents. It tells something else to, through one small adapter
             interface.
@@ -337,7 +341,7 @@
           <div class="section-head"><span class="text-eyebrow">Your data</span><h2>Saved in your browser</h2></div>
           <div class="callout">
             <p class="prose">Your current board is private to this browser and device. Cards are stored locally; they are not sent to a server or shared with other visitors. Export a backup before clearing your browser data.</p>
-            <p class="prose">The self-hosted application supports a shared PostgreSQL board with password, API-token and trusted-proxy access. This public Pages board stays on your device. Planning and dispatch follow the roadmap below.</p>
+            <p class="prose">The self-hosted application supports a shared PostgreSQL board with password, API-token and trusted-proxy access. This public Pages board stays on your device. The self-hosted app includes dependency planning, dispatch adapters and a human-reviewed suggestions inbox.</p>
           </div>
         </div>
       </section>
@@ -357,32 +361,37 @@
               <span class="rm-text">Scaffold, design substrate, fonts</span>
               <span class="pill pill-done">Done</span>
             </li>
-            <li>
+            <li class="done">
               <span class="rm-mark" aria-hidden="true"></span>
               <span class="rm-phase">Phase 1</span>
               <span class="rm-text">
                 The board on Postgres: columns, drag and drop, card editor, live refresh
               </span>
+              <span class="pill pill-done">Done</span>
             </li>
-            <li>
+            <li class="done">
               <span class="rm-mark" aria-hidden="true"></span>
               <span class="rm-phase">Phase 2</span>
               <span class="rm-text">Auth, API tokens, CLI</span>
+              <span class="pill pill-done">Done</span>
             </li>
-            <li>
+            <li class="done">
               <span class="rm-mark" aria-hidden="true"></span>
               <span class="rm-phase">Phase 3</span>
               <span class="rm-text">Configurable vocabulary, dispatcher adapters</span>
+              <span class="pill pill-done">Done</span>
             </li>
-            <li>
+            <li class="done">
               <span class="rm-mark" aria-hidden="true"></span>
               <span class="rm-phase">Phase 4</span>
               <span class="rm-text">The plan engine and the Claude Code skill</span>
+              <span class="pill pill-done">Done</span>
             </li>
-            <li>
+            <li class="done">
               <span class="rm-mark" aria-hidden="true"></span>
               <span class="rm-phase">Phase 5</span>
               <span class="rm-text">The suggestions inbox: agents propose, humans dispose</span>
+              <span class="pill pill-done">Done</span>
             </li>
             <li>
               <span class="rm-mark" aria-hidden="true"></span>

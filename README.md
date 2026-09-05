@@ -58,6 +58,7 @@ pnpm site:build   # shared React board bundled for the static site
 pnpm test:e2e     # card workflows in Pages desktop/mobile and the Next app
 pnpm test:db      # real Postgres integration; requires TEST_DATABASE_URL
 pnpm test:e2e:shared # shared Postgres browser workflows; requires TEST_DATABASE_URL
+pnpm test:e2e:suggestions # human review workflows; requires TEST_DATABASE_URL
 ```
 
 Local browser tests use installed Google Chrome. CI installs Playwright Chromium.
@@ -90,7 +91,12 @@ The shared platform persists task metadata, dependencies, parent links and comme
 through its authenticated HTTP API, rich editor and dependency-free CLI. Configure
 [workflow vocabulary](docs/CONFIGURATION.md) and [dispatch adapters](docs/DISPATCH.md)
 for agent tasks, with human-review gates and durable dispatch receipts.
-Dependency-aware scheduling and graph views remain upcoming roadmap phases.
+The [plan engine](docs/PLANNING.md) groups leaf tasks into dependency waves,
+retains human assignments and review gates, and classifies merge candidates.
+`agora skill install` installs the portable Claude Code workflow skill. The
+[suggestions inbox](docs/SUGGESTIONS.md) lets agents propose work for human
+review before it becomes a card. The dependency graph is undergoing final
+browser acceptance; see the [roadmap evidence](docs/ROADMAP.md).
 
 - [x] Shared AI Socratic design and responsive browser board
 - [x] Card editor, drag and reorder, archive and backup workflows
@@ -98,7 +104,9 @@ Dependency-aware scheduling and graph views remain upcoming roadmap phases.
 - [x] Authentication
 - [x] API tokens and CLI
 - [x] Configurable workflow, agent policies and dispatch adapters
-- [ ] Dependency planning and graph view
+- [x] Dependency planning and portable Claude Code skill
+- [x] Suggestions inbox with human review
+- [ ] Dependency graph acceptance
 
 ## Shared design
 
