@@ -35,6 +35,6 @@ export function layoutGraph(board: BoardData, plan: BoardPlan): DependencyGraph 
 }
 export function buildGraph(board: BoardData, workflow: Workflow) { return layoutGraph(board, planBoard(board, workflow)) }
 export function fitGraph(width: number, height: number, viewportWidth: number, viewportHeight: number) {
-  const zoom = Math.max(0.02, Math.min(1, (viewportWidth - 32) / width, (viewportHeight - 32) / height))
+  const zoom = Math.max(0.001, Math.min(1, (viewportWidth - 32) / width, (viewportHeight - 32) / height))
   return { zoom, x: (viewportWidth - width * zoom) / 2, y: (viewportHeight - height * zoom) / 2 }
 }

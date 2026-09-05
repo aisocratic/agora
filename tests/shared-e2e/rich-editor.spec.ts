@@ -38,7 +38,7 @@ test("rich task fields, dependencies, authenticated comments and dispatch gates 
   await expect(dialog.getByLabel("PR URL", { exact: true })).toHaveValue("https://github.com/example/repo/pull/1")
   await dialog.getByLabel("Add a comment", { exact: true }).fill("Keep this authenticated note")
   await dialog.getByRole("button", { name: "Add comment", exact: true }).click()
-  await expect(dialog.getByText("Keep this authenticated note", { exact: true })).toBeVisible()
+  await expect(dialog.locator("p").filter({ hasText: /^Keep this authenticated note$/ })).toBeVisible()
   await dialog.getByRole("button", { name: "Dispatch saved task" }).click()
   await expect(dialog.getByRole("status")).toContainText("Human review")
   const saved = await (await request.get("/api/cards/rich-child", { headers: auth })).json()

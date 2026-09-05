@@ -51,6 +51,8 @@ describe("planner-backed graph layout", () => {
     for (const node of graph.nodes) { expect(node.x + NODE_WIDTH).toBeLessThanOrEqual(graph.width); expect(node.y + NODE_HEIGHT).toBeLessThanOrEqual(graph.height) }
     const fit = fitGraph(graph.width, graph.height, 390, 500)
     expect(fit.zoom).toBeGreaterThan(0); expect(Number.isFinite(fit.x + fit.y)).toBe(true)
+    expect(graph.width * fit.zoom).toBeLessThanOrEqual(390 - 32)
+    expect(graph.height * fit.zoom).toBeLessThanOrEqual(500 - 32)
     expect(buildGraph(board(), DEFAULT_WORKFLOW).nodes).toEqual([])
   })
 })

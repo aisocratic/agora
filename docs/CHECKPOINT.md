@@ -1,14 +1,9 @@
-# Roadmap checkpoint — stopped at user request
+# Roadmap checkpoint — phases complete, release integration pending
 
-Work stopped on 2026-09-05 before the full roadmap was complete. This checkpoint preserves all saved source changes; it is not a finished release.
+Work resumed at the user's explicit request on 2026-09-05. Phases 0–6 now have implementation and verification evidence in `docs/phases/`.
 
-- Phases 0–5 have implementation and verification evidence in `docs/phases/`. Phase 4 also includes the reviewed SCC/cycle and completed-edge fixes.
-- Phase 6 dependency graph implementation and initial tests are present, but its complete shared/Pages desktop/mobile acceptance audit was interrupted. Do not mark Phase 6 complete without finishing that verification.
-- The root CI workflow includes the database, shared-browser and suggestions checks. Check final graph browser coverage before publication.
-- Both typecheck and whitespace checks passed at checkpoint time. Existing phase evidence records the earlier focused, PostgreSQL, CLI and browser checks; those reports do not claim a full final release audit.
-- README/site copy and all roadmap status must be synchronized with final verified behavior before merging to main.
-- No production deployment is part of this checkpoint. The already-published Pages version stays on main.
-
-All workers were interrupted at the user's request. Resume only on a new explicit user instruction.
-
-Checkpoint verification: all six graph unit tests passed. Full graph browser acceptance remains unfinished.
+- Phase 6 shared/Pages desktop/mobile graph acceptance is complete. Its report records graph direction, navigation/editing, cycle rejection, keyboard controls, responsive layout and the large-graph fit correction.
+- The complete shared browser suite passed locally (nine cases). The existing CI automatically includes the new Pages and shared graph cases.
+- `pnpm verify` and production build passed. Full final CI and release integration are still required; phase evidence is not a claim that every release gate has finished.
+- Final README/site/API/security documentation synchronization, complete regression and suggestions browser checks, clean-install/CI verification, merge to main, and published Pages synchronization remain parent-managed tasks.
+- The branch is `checkpoint/roadmap-2026-09-05`. Published Pages remains on main until the release work completes. No npm registry publication is claimed.

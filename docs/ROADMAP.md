@@ -1,6 +1,6 @@
 # Agora roadmap completion contract
 
-**Stopped at user request on 2026-09-05.** See [the checkpoint](CHECKPOINT.md) for unfinished work and verification limits.
+**Resumed and phases 0–6 complete on 2026-09-05.** See [the checkpoint](CHECKPOINT.md) for final integration and publication gates.
 
 Source: numbered roadmap and product examples in `site/index.html`, repository configuration and security policy. The personal Pages board is already working; the roadmap also requires the shared server and agent workflows below.
 
@@ -14,7 +14,7 @@ Each phase has a separate agent goal and an evidence report in `docs/phases/`. A
 | 3 | 1, 2 integration | Configurable columns/types/people/agent vocabulary without migrations; none/webhook/opt-in command/GitHub workflow dispatch; signed raw webhook bodies and example adapters | Complete — `docs/phases/phase-3.md` |
 | 4 | 1, 3 | Dependency-aware plan engine and Claude Code skill installer; leaf tasks, epics, deterministic waves, human assignments, review gates and ready-to-merge classification | Complete — `docs/phases/phase-4.md` |
 | 5 | 1, 2 | Persisted suggestions inbox: agents submit proposals; humans review, edit, accept into cards or dismiss with atomic/idempotent transitions | Complete — `docs/phases/phase-5.md` |
-| 6 | 1, 4 | Interactive dependency graph with card navigation/editing, accurate dependency direction, cycle feedback and useful empty/mobile states | In progress |
+| 6 | 1, 4 | Interactive dependency graph with card navigation/editing, accurate dependency direction, cycle feedback and useful empty/mobile states | Complete — `docs/phases/phase-6.md` |
 
 ## Integration gates
 

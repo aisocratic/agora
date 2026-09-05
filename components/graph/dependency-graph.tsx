@@ -17,7 +17,7 @@ export function DependencyGraph({ board, workflow, onOpenCard }: { board: BoardD
   const selected = lookup.get(selection ?? "") ?? graph.nodes[0]
   const matches = graph.nodes.filter(node => `${node.title} ${node.id} ${node.status}`.toLowerCase().includes(query.toLowerCase()))
   function fit() { const bounds = viewport.current?.getBoundingClientRect(); if (bounds) setView(fitGraph(graph.width, graph.height, bounds.width, bounds.height)) }
-  function zoom(factor: number) { setView(previous => { const bounds = viewport.current?.getBoundingClientRect(); const next = Math.max(.02, Math.min(2, previous.zoom * factor)); const cx = (bounds?.width ?? 500) / 2, cy = (bounds?.height ?? 500) / 2; return { zoom: next, x: cx - (cx - previous.x) * next / previous.zoom, y: cy - (cy - previous.y) * next / previous.zoom } }) }
+  function zoom(factor: number) { setView(previous => { const bounds = viewport.current?.getBoundingClientRect(); const next = Math.max(.001, Math.min(2, previous.zoom * factor)); const cx = (bounds?.width ?? 500) / 2, cy = (bounds?.height ?? 500) / 2; return { zoom: next, x: cx - (cx - previous.x) * next / previous.zoom, y: cy - (cy - previous.y) * next / previous.zoom } }) }
   function select(id: string, focus = false) {
     setSelection(id); const node = lookup.get(id), bounds = viewport.current?.getBoundingClientRect()
     if (node && bounds) setView(previous => ({ zoom: Math.max(.65, previous.zoom), x: bounds.width / 2 - (node.x + NODE_WIDTH / 2) * Math.max(.65, previous.zoom), y: bounds.height / 2 - (node.y + NODE_HEIGHT / 2) * Math.max(.65, previous.zoom) }))
