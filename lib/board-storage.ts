@@ -1,3 +1,4 @@
+import type { Workflow } from "./workflow"
 import { EMPTY_BOARD, parseBoard, updateBoard, type BoardAction, type BoardData } from "./board"
 
 export const BOARD_STORAGE_KEY = "agora.board.v1"
@@ -25,6 +26,20 @@ export type BoardSnapshot = {
   error: string | null
   readOnly: boolean
   unsaved: boolean
+  workflow?: Workflow
+  pending?: boolean
+  revision?: number
+}
+export interface BoardController {
+  getSnapshot(): BoardSnapshot
+  getServerSnapshot(): BoardSnapshot
+  subscribe(listener: () => void): () => void
+  connect(): () => void
+  refresh?(): Promise<void>
+  dispatch(action: BoardAction, revision?: number): void | Promise<void>
+  launch?(id: string, idempotencyKey: string, revision?: number): Promise<{ id: string; status: string; message: string }>
+  export(): string
+  replace(raw: string): void | Promise<void>
 }
 const INITIAL: BoardSnapshot = {
   board: EMPTY_BOARD,

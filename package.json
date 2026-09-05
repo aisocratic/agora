@@ -23,7 +23,7 @@
     "node": ">=20.9"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -34,7 +34,14 @@
     "verify": "pnpm design:check && pnpm typecheck && pnpm lint && pnpm test",
     "design:sync": "node scripts/sync-design.mjs",
     "design:check": "node site/scripts/sync-design.mjs --check",
-    "site:build": "node scripts/build-site.mjs"
+    "site:build": "node scripts/build-site.mjs",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "test:db": "node scripts/test-db.mjs",
+    "test:e2e:shared": "pnpm build && playwright test --config playwright.shared.config.ts",
+    "cli": "node cli/agora.mjs",
+    "cli:pack": "npm pack ./cli --pack-destination /tmp",
+    "test:suggestions": "vitest run tests/suggestions.test.ts tests/suggestions-database.test.ts",
+    "test:e2e:suggestions": "pnpm build && playwright test --config playwright.suggestions.config.ts"
   },
   "dependencies": {
     "@aisocratic/design": "file:vendor/aisocratic-design-0.2.0.tgz",

@@ -1,0 +1,11 @@
+{
+  "name": "@aisocratic/agora-cli",
+  "version": "0.1.0",
+  "description": "Dependency-free HTTP CLI for an Agora shared board",
+  "type": "module",
+  "bin": { "agora": "./agora.mjs" },
+  "files": ["agora.mjs", "README.md", "LICENSE"],
+  "engines": { "node": ">=20.9" },
+  "license": "MIT",
+  "private": true
+}

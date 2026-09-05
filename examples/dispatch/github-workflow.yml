@@ -1,0 +1,26 @@
+name: Receive Agora task
+on:
+  workflow_dispatch:
+    inputs:
+      agora:
+        description: Signed-in Agora task envelope
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  receive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect task envelope
+        env:
+          AGORA_ENVELOPE: ${{ inputs.agora }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          envelope = json.loads(os.environ['AGORA_ENVELOPE'])
+          print('Dispatch:', envelope['dispatchId'])
+          print('Card:', envelope['card']['id'])
+          # Enqueue the ID exactly once in your durable runner; configure credentials
+          # only in that trusted execution environment. This example starts no agent.
+          PY

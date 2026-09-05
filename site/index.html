@@ -185,7 +185,7 @@
               <h3>Agents get an API and a CLI, not a scraper.</h3>
               <p>
                 Everything the web UI does is a documented HTTP endpoint with token auth.
-                <code>npx agora board</code> returns the plan as JSON.
+                <code>agora board --json</code> returns the board as JSON; the planner extends that response.
               </p>
             </article>
 
@@ -208,8 +208,9 @@
             <h2>The planned agent workflow</h2>
           <p >
             The CLI is an HTTP client, never a database client — it needs a token and a URL, not
-            Postgres credentials. It ships as a single dependency-free file, so
-            <code>npx agora</code> works in any repo without a clone.
+            Postgres credentials. It ships as a single dependency-free file. Copy <code>cli/agora.mjs</code>
+            or install its locally packed tarball to use it outside the application clone.
+            See the <a href="https://github.com/aisocratic/agora/blob/main/docs/CLI.md">CLI guide</a>; no npm registry release is claimed.
           </p>
           </div>
 
@@ -217,11 +218,11 @@
             <div class="split-col">
             <figure class="code" data-copy>
               <figcaption class="code-head"><span class="code-label">The loop</span></figcaption>
-              <pre><code><span class="c-cmd">npx</span> agora login --url https://board.example.com
-<span class="c-cmd">npx</span> agora board --json     <span class="c-comment"># ready, in dep order</span>
-<span class="c-cmd">npx</span> agora get AG-41        <span class="c-comment"># card, comments, deps</span>
-<span class="c-cmd">npx</span> agora comment AG-41 --author claude &lt; notes.md
-<span class="c-cmd">npx</span> agora move AG-41 review</code></pre>
+              <pre><code><span class="c-cmd">agora</span> login --url https://board.example.com
+<span class="c-cmd">agora</span> board --json     <span class="c-comment"># ready, in dep order</span>
+<span class="c-cmd">agora</span> get AG-41        <span class="c-comment"># card, comments, deps</span>
+<span class="c-cmd">agora</span> comment AG-41 --author claude &lt; notes.md
+<span class="c-cmd">agora</span> move AG-41 review</code></pre>
             </figure>
 
               <p class="note note-tight">
@@ -336,7 +337,7 @@
           <div class="section-head"><span class="text-eyebrow">Your data</span><h2>Saved in your browser</h2></div>
           <div class="callout">
             <p class="prose">Your current board is private to this browser and device. Cards are stored locally; they are not sent to a server or shared with other visitors. Export a backup before clearing your browser data.</p>
-            <p class="prose">The hosted, shared board with a database and access controls is planned. The agent and dispatch examples describe that future platform.</p>
+            <p class="prose">The self-hosted application supports a shared PostgreSQL board with password, API-token and trusted-proxy access. This public Pages board stays on your device. Planning and dispatch follow the roadmap below.</p>
           </div>
         </div>
       </section>

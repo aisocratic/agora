@@ -273,3 +273,23 @@ test("warm light theme preserves board data and dialog contrast", async ({ page 
   await board(page).scrollIntoViewIfNeeded()
   await page.screenshot({ path: info.outputPath("warm-board.png") })
 })
+
+
+test("historical vocabulary and local comments remain usable", async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem("agora.board.v1", JSON.stringify({ version: 1, cards: [{ id: "historical", title: "Historical task", description: "Keep this", column: "old-queue", type: "retired-type", assignee: "retired-person", archived: false, createdAt: "2026-09-05T00:00:00Z", updatedAt: "2026-09-05T00:00:00Z" }] })))
+  await page.reload()
+  await expect(page.getByRole("region", { name: "old-queue (unconfigured) column", exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "Edit Historical task", exact: true }).click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByText("Task settings and dependencies", { exact: true }).click()
+  await expect(dialog.getByLabel("Type", { exact: true })).toHaveValue("retired-type")
+  await expect(dialog.getByLabel("Assignee", { exact: true })).toHaveValue("retired-person")
+  await dialog.getByLabel("Add a comment", { exact: true }).fill("Preserve this local note")
+  await dialog.getByRole("button", { name: "Add comment", exact: true }).click()
+  await expect(dialog.getByText("Preserve this local note", { exact: true })).toBeVisible()
+  await dialog.getByLabel("Column", { exact: true }).selectOption("todo")
+  await dialog.getByRole("button", { name: "Save changes", exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await page.reload()
+  await expect(page.locator('[data-column="todo"] .agora-card-title')).toHaveText(["Historical task"])
+})

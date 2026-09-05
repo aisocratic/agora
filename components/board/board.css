@@ -354,8 +354,7 @@ html:has(.agora-board) {
     flex: 1;
   }
   .agora-columns {
-    grid-template-columns: repeat(4, minmax(17rem, 1fr));
-    min-width: 72rem;
+    --agora-column-width: 17rem;
   }
   .agora-icon {
     width: 2.5rem;
@@ -373,3 +372,14 @@ html:has(.agora-board) {
     font-size: 16px;
   }
 }
+
+.agora-task-fields { margin-top: 1rem; }
+.agora-task-fields summary { cursor: pointer; font-family: var(--font-body); margin-bottom: 1rem; }
+.agora-check { display: flex; align-items: center; gap: .5rem; margin-block: .5rem; }
+.agora-check input[type="checkbox"] { width: auto; flex: none; }
+.agora-task-fields fieldset { border: 1px solid var(--border); padding: .75rem; border-radius: .5rem; }
+
+.agora-comments { border-top: 1px solid var(--border); margin-top: 1.5rem; padding-top: 1rem; }
+.agora-comments textarea { display: block; width: 100%; min-height: 5rem; margin-block: .5rem; color: var(--foreground); background: var(--background); border: 1px solid var(--border); border-radius: .5rem; padding: .5rem; }
+.agora-comments article { border-bottom: 1px solid var(--border); padding-block: .5rem; }
+.agora-dispatch { margin-top: 1rem; font-size: .875rem; }
