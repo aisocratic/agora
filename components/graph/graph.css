@@ -1,5 +1,5 @@
 .agora-view-switch { display:flex; gap:.5rem; margin:0 0 1rem; }
-.agora-view-switch [aria-pressed="true"] { background:var(--foreground); color:var(--background); }
+.agora-view-switch .agora-btn[aria-pressed="true"] { background:var(--foreground); color:var(--background); }
 .agora-graph { min-width:0; }
 .graph-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; }
 .graph-toolbar p { margin:0; }.graph-toolbar span { display:block; color:var(--muted-foreground); font-size:.85rem; }

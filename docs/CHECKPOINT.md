@@ -1,9 +1,11 @@
-# Roadmap checkpoint — phases complete, release integration pending
+# Roadmap completion — 2026-09-05
 
-Work resumed at the user's explicit request on 2026-09-05. Phases 0–6 now have implementation and verification evidence in `docs/phases/`.
+The user-requested pause was resumed, all seven phases completed, and the roadmap
+was merged into main through [PR #1](https://github.com/aisocratic/agora/pull/1).
+The complete GitHub application checks and Pages deployment passed. The published
+board and all seven public roadmap status indicators were inspected in a browser.
 
-- Phase 6 shared/Pages desktop/mobile graph acceptance is complete. Its report records graph direction, navigation/editing, cycle rejection, keyboard controls, responsive layout and the large-graph fit correction.
-- The complete shared browser suite passed locally (nine cases). The existing CI automatically includes the new Pages and shared graph cases.
-- `pnpm verify` and production build passed. Full final CI and release integration are still required; phase evidence is not a claim that every release gate has finished.
-- Final README/site/API/security documentation synchronization, complete regression and suggestions browser checks, clean-install/CI verification, merge to main, and published Pages synchronization remain parent-managed tasks.
-- The branch is `checkpoint/roadmap-2026-09-05`. Published Pages remains on main until the release work completes. No npm registry publication is claimed.
+See [release verification](RELEASE-VERIFICATION.md) for acceptance evidence and
+[phase reports](phases/) for implementation details. The shared application is
+self-hosted; GitHub Pages retains device-local storage. The CLI is distributed
+as a copyable file or locally packed tarball; no npm registry publication is claimed.

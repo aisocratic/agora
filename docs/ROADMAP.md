@@ -1,6 +1,6 @@
 # Agora roadmap completion contract
 
-**Resumed and phases 0–6 complete on 2026-09-05.** See [the checkpoint](CHECKPOINT.md) for final integration and publication gates.
+**All seven phases completed on 2026-09-05.** See [release verification](RELEASE-VERIFICATION.md) for integration and publication evidence.
 
 Source: numbered roadmap and product examples in `site/index.html`, repository configuration and security policy. The personal Pages board is already working; the roadmap also requires the shared server and agent workflows below.
 

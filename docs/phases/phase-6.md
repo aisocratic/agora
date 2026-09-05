@@ -1,6 +1,6 @@
 # Phase 6: dependency graph
 
-Status: complete, verified 2026-09-05. Final release integration and publication remain parent-managed gates.
+Status: complete, verified 2026-09-05. Final integration and publication evidence is in [release verification](../RELEASE-VERIFICATION.md).
 
 ## Delivered
 
@@ -27,3 +27,6 @@ The shared tests use a temporary schema in a dedicated loopback PostgreSQL test 
 ## Release handoff
 
 Run the complete final regression/CI and suggestions browser gates, audit setup/security documentation and public status, then synchronize main and published Pages. Phase completion does not itself claim those release gates or an npm registry publication.
+
+The final published-site visual audit corrected selected-view hover contrast in
+dark mode; the rebuilt graph was rechecked in Chrome.

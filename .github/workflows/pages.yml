@@ -5,8 +5,8 @@ on:
     branches: [main]
     paths:
       - "site/**"
-      - "components/board/**"
-      - "lib/board*"
+      - "components/**"
+      - "lib/**"
       - "scripts/build-site.mjs"
       - "package.json"
       - "pnpm-lock.yaml"

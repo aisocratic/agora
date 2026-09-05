@@ -174,7 +174,7 @@
             <article class="point">
               <h3>Review is a gate, not a column.</h3>
               <p>
-                <code>needs_human_review</code> blocks work <em>before</em> it starts;
+                <code>needsHumanReview</code> blocks work <em>before</em> it starts;
                 <code>automerge</code> governs only the merge at the end. The two are deliberately
                 separate, because "I want to look at this first" and "you may merge this without me"
                 are different questions.
@@ -184,7 +184,7 @@
             <article class="point">
               <h3>Agents get an API and a CLI, not a scraper.</h3>
               <p>
-                Everything the web UI does is a documented HTTP endpoint with token auth.
+                Board operations use documented HTTP endpoints with token auth; suggestion review requires a human browser session.
                 <code>agora board --json</code> returns the board as JSON; the planner extends that response.
               </p>
             </article>
