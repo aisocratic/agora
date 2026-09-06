@@ -10,11 +10,9 @@ export const body = Space_Grotesk({
   variable: "--aisocratic-font-body",
 })
 
-// Newsreader is variable 200–800 with a true italic. Only the 200 is loaded:
-// headings on a board are chrome, and the extra-light serif is what gives the
-// dense card grid a horizon line without adding visual weight.
+// Extra-light headings and regular card titles share the same serif family.
 export const display = Newsreader({
-  weight: ["200"],
+  weight: ["200", "400"],
   style: ["normal", "italic"],
   subsets: ["latin"],
   display: "swap",

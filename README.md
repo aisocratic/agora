@@ -140,3 +140,20 @@ content layout in `site/styles.css`, shared board styling in
 `components/board/board.css`, and shared family chrome in Stoa.
 
 MIT © AI Socratic.
+
+### Local test kanban board
+
+Run `pnpm dev --port 4190`, then open
+[the test dashboard](http://127.0.0.1:4190/admin/todo). It includes example tasks
+in six columns and uses a separate browser storage key from your personal board.
+Try dragging cards, clicking titles to rename, opening card details, changing
+priority and review flags, folding subtasks, and filtering the Board or Focus view.
+Changes persist in that browser. This sample board does not connect to production
+agents or the website database.
+
+The test workspace supports modifier-click selection (⌘/Ctrl/Shift), bulk moves,
+priority and assignment changes, and archiving. Existing tasks autosave in the
+compact editor; new tasks are created explicitly. Add subtasks from the editor
+or use **Add task** beneath a column. The move/archive hover tray is disabled.
+
+The same test dashboard is deployed to [GitHub Pages](https://aisocratic.github.io/agora/admin/todo/). `pnpm site:build` bundles it from the same component as the Next.js route, including the Stoa theme and controls.

@@ -9,6 +9,7 @@ export const commentSchema = z.object({
 }).strict()
 export const taskFieldsSchema = z.object({
   type: name.optional(),
+  priority: z.number().int().min(1).max(3).optional(),
   assignee: name.nullable().optional(),
   effort: name.nullable().optional(),
   model: name.nullable().optional(),

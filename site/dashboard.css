@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "@aisocratic/design/tailwind.css";
+@source "../components";
+@source "../node_modules/@aisocratic/design/dist";
+
+:root {
+  --aisocratic-font-body: "Space Grotesk", sans-serif;
+  --aisocratic-font-display: "Newsreader", serif;
+  --aisocratic-font-code: "JetBrains Mono", monospace;
+}
