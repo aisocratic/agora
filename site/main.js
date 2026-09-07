@@ -32,6 +32,11 @@
       applyTheme()
     })
   })
+  window.addEventListener("storage", function (event) {
+    if (event.key !== "agora-theme") return
+    preference = ["dark", "light", "system"].indexOf(event.newValue) !== -1 ? event.newValue : "dark"
+    applyTheme()
+  })
   prefersDark.addEventListener("change", applyTheme)
   applyTheme()
 

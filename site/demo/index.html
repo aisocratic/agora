@@ -2,9 +2,8 @@
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Agora — a kanban board for humans and coding agents</title>
+    <title>Demo · Agora</title>
     <meta
       name="description"
       content="An open-source kanban board where cards carry a PR link, an automerge flag and a review gate, and a dependency graph decides what is actually workable next. MIT, self-hosted, one Postgres database."
@@ -43,21 +42,21 @@
       rel="stylesheet"
     />
     <!-- Shared design tokens and site recipes, vendored verbatim. Must load before styles.css. -->
-    <link rel="stylesheet" href="./vendor/design.css" />
-    <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./assets/board.css?v=0.1.0-roadmap" />
-  </head>
+    <link rel="stylesheet" href="../vendor/design.css" />
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
 
   <body>
     <a class="skip" href="#main">Skip to content</a>
 
-    <header class="site-header">
+    <header class="site-header demo-site-header">
       <div class="page-shell site-bar">
-        <div class="brand"><a class="agora-site-brand" href="./" aria-label="Agora home"><svg viewBox="0 0 796 796" width="24" height="24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="aisocratic-design-mark-_R_0_" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"></stop><stop offset="35%" stop-color="#a855f7"></stop><stop offset="65%" stop-color="#ec4899"></stop><stop offset="100%" stop-color="#f472b6"></stop></linearGradient></defs><path d="M415 50c192.195 0 348 155.805 348 348S607.195 746 415 746 67 590.195 67 398 222.805 50 415 50m0 103c-135.31 0-245 109.69-245 245s109.69 245 245 245 245-109.69 245-245-109.69-245-245-245" transform="translate(-17 0)" fill="url(#aisocratic-design-mark-_R_0_)"></path></svg><span>Agora</span></a></div>
+        <div class="brand"><a class="agora-site-brand" href="../" aria-label="Agora home"><svg viewBox="0 0 796 796" width="24" height="24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="aisocratic-design-mark-_R_0_" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"></stop><stop offset="35%" stop-color="#a855f7"></stop><stop offset="65%" stop-color="#ec4899"></stop><stop offset="100%" stop-color="#f472b6"></stop></linearGradient></defs><path d="M415 50c192.195 0 348 155.805 348 348S607.195 746 415 746 67 590.195 67 398 222.805 50 415 50m0 103c-135.31 0-245 109.69-245 245s109.69 245 245 245 245-109.69 245-245-109.69-245-245-245" transform="translate(-17 0)" fill="url(#aisocratic-design-mark-_R_0_)"></path></svg><span>Agora</span></a></div>
         <nav class="site-nav" aria-label="Sections">
-          <a class="nav-link" href="./" aria-current="page">Overview</a>
-          <a class="nav-link" href="#features">Features</a>
-          <a class="nav-link" href="./demo/">Demo</a>
+          <a class="nav-link" href="../">Overview</a>
+          <a class="nav-link" href="../#features">Features</a>
+          <a class="nav-link" href="./" aria-current="page">Demo</a>
           <a class="nav-link" href="https://github.com/aisocratic/agora">GitHub ↗</a>
         </nav>
         <div class="site-actions">
@@ -98,66 +97,28 @@
     <div class="menu-overlay" hidden></div>
     <div id="mobile-menu" class="mobile-menu" hidden>
       <nav class="page-shell mobile-nav" aria-label="Mobile sections">
-        <a href="./" aria-current="page">Overview</a><a href="#features">Features</a><a href="./demo/">Demo</a>
+        <a href="../">Overview</a><a href="../#features">Features</a><a href="./" aria-current="page">Demo</a>
         <div class="mobile-nav-foot"><a href="https://github.com/aisocratic/agora">View on GitHub ↗</a></div>
       </nav>
     </div>
 
-    <main id="main">
-      <!-- ------------------------------------------------------------ hero -->
-      <section class="project-hero">
-        <div class="page-shell">
-          <p class="text-eyebrow">AI Socratic / Agora</p>
-          <h1>A board for humans<br />and coding agents.</h1>
-          <p class="hero-sub">A shared place to plan, review and ship. Cards carry the context; a dependency graph shows what is ready to work on next.</p>
-          <div class="actions">
-            <a class="btn btn-primary" href="./demo/">Try the demo ↗</a>
-            <a class="btn btn-outline" href="#features">Explore features</a>
-          </div>
-          <p class="hero-status">Open source · Self-hosted · Built with Stoa</p>
-        </div>
-      </section>
-      <section class="product-preview page-shell" aria-labelledby="preview-title">
-        <div class="preview-caption"><div><span class="text-eyebrow">Inside Agora</span><h2 id="preview-title">One workspace. Every next step.</h2></div><a class="nav-link" href="./demo/">Open interactive demo ↗</a></div>
-        <a class="preview-window" href="./demo/" aria-label="Try the interactive Agora workspace demo">
-          <div class="preview-window-bar"><span class="preview-dots" aria-hidden="true">● ● ●</span><span>Agora / Workspace</span><span class="preview-live">Live product preview</span></div>
-          <iframe src="./admin/todo/" title="Agora workspace preview" tabindex="-1" loading="lazy" aria-hidden="true"></iframe>
-          <span class="preview-open">Explore the workspace ↗</span>
-        </a>
-        <p class="note">Plan with cards, track dependencies, and move work from backlog to done. The demo starts with a sample project so you can explore right away.</p>
-      </section>
-
-      <section id="features" class="section">
-        <div class="page-shell">
-          <div class="section-head"><span class="text-eyebrow">Built for the whole workflow</span><h2>From an idea to a shipped change.</h2><p>A clear board for people. Structured context for coding agents.</p></div>
-          <div class="feature-grid">
-            <article class="point"><span class="feature-number">01 / Plan</span><h3>See the work your way.</h3><p>Move cards across your board, switch to a list, or inspect dependencies in the graph. Keep priorities, assignees, and the details of each task together.</p></article>
-            <article class="point"><span class="feature-number">02 / Coordinate</span><h3>Know what can start next.</h3><p>Connect prerequisites so work follows the right order. The self-hosted planner groups unblocked tasks into waves for people and agents to pick up.</p></article>
-            <article class="point"><span class="feature-number">03 / Ship</span><h3>Keep review in the loop.</h3><p>Carry context from a card to a pull request. Human review gates and merge permissions give each task a clear path to completion.</p></article>
-          </div>
-        </div>
-      </section>
-      <section class="section"><div class="page-shell"><div class="callout"><span class="text-eyebrow">Try it in your browser</span><h2>A real board, ready to explore.</h2><p class="prose">The demo opens a sample project in the same workspace used by Agora. Create and edit cards, switch between board, list, and graph views, and explore the filters. Your changes are saved on this device; no sign-in is needed.</p><div class="actions"><a class="btn btn-primary" href="./demo/">Open the demo ↗</a><a class="btn btn-outline" href="https://github.com/aisocratic/agora/blob/main/docs/CLI.md">Explore the agent CLI</a></div></div></div></section>
-      <section id="board" class="section board-band">
-        <div class="page-shell">
-          <div class="section-head"><span class="text-eyebrow">Your workspace</span><h2>Start with a blank board.</h2><p>Ready to plan your own work? This personal board saves on this browser and device. <a href="./demo/">Explore the sample project first ↗</a></p></div>
-          <div id="agora-board"><p class="agora-help">Loading your board…</p><noscript><p>Enable JavaScript to use your personal board.</p></noscript></div>
-        </div>
-      </section>
-      <section class="section"><div class="page-shell"><div class="callout"><span class="text-eyebrow">Make it yours</span><h2>A shared board on your own infrastructure.</h2><p class="prose">Keep your team and coding agents working from the same context. Run Agora with one PostgreSQL database, and connect your tools through the API and CLI.</p><div class="actions"><a class="btn btn-primary" href="./demo/">Try the demo ↗</a><a class="btn btn-outline" href="https://github.com/aisocratic/agora#quick-start">Get started on GitHub</a></div></div></div></section>
+    <main id="main" class="demo-page">
+      <section class="page-shell demo-intro"><div><p class="text-eyebrow">Interactive demo</p><h1>Meet your next workspace.</h1><p>Create a card, switch views, or open a task to explore its details. Changes stay in this browser.</p></div><a class="btn btn-outline" href="../admin/todo/">Open full screen ↗</a></section>
+      <div class="demo-frame"><iframe src="../admin/todo/" title="Interactive Agora board demo"></iframe></div>
+      <div class="page-shell demo-foot"><p>Sample project · Saved locally on this device</p><a href="https://github.com/aisocratic/agora#quick-start">Set up a shared workspace ↗</a></div>
     </main>
 
     <footer class="site-footer">
       <div class="footer-top"><div class="page-shell footer-grid">
         <div class="footer-brand">
-          <a class="agora-site-brand lockup" href="./" aria-label="Agora home"><svg viewBox="0 0 796 796" width="24" height="24" aria-hidden="true"  xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="agora-footer-mark-_R_0_" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"></stop><stop offset="35%" stop-color="#a855f7"></stop><stop offset="65%" stop-color="#ec4899"></stop><stop offset="100%" stop-color="#f472b6"></stop></linearGradient></defs><path d="M415 50c192.195 0 348 155.805 348 348S607.195 746 415 746 67 590.195 67 398 222.805 50 415 50m0 103c-135.31 0-245 109.69-245 245s109.69 245 245 245 245-109.69 245-245-109.69-245-245-245" transform="translate(-17 0)" fill="url(#agora-footer-mark-_R_0_)"></path></svg>
+          <a class="agora-site-brand lockup" href="../" aria-label="Agora home"><svg viewBox="0 0 796 796" width="24" height="24" aria-hidden="true"  xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="agora-footer-mark-_R_0_" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"></stop><stop offset="35%" stop-color="#a855f7"></stop><stop offset="65%" stop-color="#ec4899"></stop><stop offset="100%" stop-color="#f472b6"></stop></linearGradient></defs><path d="M415 50c192.195 0 348 155.805 348 348S607.195 746 415 746 67 590.195 67 398 222.805 50 415 50m0 103c-135.31 0-245 109.69-245 245s109.69 245 245 245 245-109.69 245-245-109.69-245-245-245" transform="translate(-17 0)" fill="url(#agora-footer-mark-_R_0_)"></path></svg>
 <span>Agora</span></a>
           <p>A kanban board built for humans and coding agents.</p>
         </div>
         <div><h4 class="text-eyebrow">Explore</h4><ul>
-          <li><a href="./">Overview</a></li>
-          <li><a href="./#features">Features</a></li>
-          <li><a href="./demo/">Demo</a></li>
+          <li><a href="../">Overview</a></li>
+          <li><a href="../#features">Features</a></li>
+          <li><a href="../demo/">Demo</a></li>
         </ul></div>
         <div><h4 class="text-eyebrow">Project</h4><ul>
           <li><a href="https://github.com/aisocratic/agora#readme">Documentation</a></li>
@@ -177,7 +138,6 @@
       </div></div>
     </footer>
 
-    <script src="./main.js"></script>
-    <script type="module" src="./assets/board.js?v=0.1.0-roadmap"></script>
+    <script src="../main.js"></script>
   </body>
 </html>

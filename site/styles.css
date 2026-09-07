@@ -381,3 +381,38 @@
 .quick-start { max-width: 48rem; margin: 0 auto 3rem; }
 .quick-start .code { margin: 0; }
 .hero-status { margin-top: 1.5rem; }
+
+/* Product overview and demo share Stoa's navigation, typography, and tokens. */
+.product-preview { padding-bottom: 4rem; }
+.preview-caption { display: flex; justify-content: space-between; gap: 1.5rem; align-items: end; margin-bottom: 1.5rem; }
+.preview-caption h2 { margin-top: .5rem; font-size: clamp(1.5rem, 3vw, 2rem); }
+.preview-window { position: relative; display: block; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--card); overflow: hidden; color: var(--foreground); }
+.preview-window-bar { display: flex; align-items: center; gap: 1rem; padding: .85rem 1.1rem; border-bottom: 1px solid var(--border); font-size: var(--text-micro); color: var(--muted-foreground); }
+.preview-dots { letter-spacing: .2em; opacity: .5; }
+.preview-live { margin-left: auto; }
+.preview-window iframe { display: block; width: 100%; height: 560px; border: 0; pointer-events: none; }
+.preview-open { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--foreground); color: var(--background); padding: .75rem 1.25rem; border-radius: var(--radius-lg); font-size: var(--text-body); white-space: nowrap; box-shadow: 0 4px 24px #0003; }
+.preview-window:hover { border-color: var(--accent); }
+/* Reserve the navbar height before the demo introduction. */
+.demo-site-header { position: relative; }
+.demo-intro { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding-top: 3rem; padding-bottom: 2rem; }
+.demo-intro h1 { font-size: clamp(2rem, 4vw, 3rem); margin: .7rem 0; }
+.demo-intro p:not(.text-eyebrow), .demo-foot { color: var(--muted-foreground); font-size: var(--text-body); }
+.demo-intro .btn { flex-shrink: 0; }
+.demo-frame { margin: 0 1.5rem; border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; background: var(--card); }
+.demo-frame iframe { display: block; width: 100%; height: max(760px, calc(100dvh - 200px)); border: 0; }
+.demo-foot { display: flex; gap: 1rem; justify-content: space-between; padding-top: 1.25rem; padding-bottom: 3rem; }
+@media (max-width: 46rem) {
+  .preview-caption, .demo-intro, .demo-foot { align-items: start; flex-direction: column; }
+  .preview-window iframe { width: 1100px; height: 520px; }
+  .preview-live { display: none; }
+  .demo-frame { margin: 0 .75rem; }
+  .demo-intro { padding-top: 2rem; }
+}
+.agora-site-brand { display: inline-flex; align-items: center; gap: 8px; color: var(--foreground); text-decoration: none; font-family: var(--font-body); font-size: var(--text-lead); font-weight: 500; line-height: var(--text-lead--line-height); letter-spacing: normal; }
+.agora-site-brand svg { flex-shrink: 0; }
+.feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; margin-top: 2rem; }
+.feature-number { display: block; margin-bottom: 1.25rem; color: var(--muted-foreground); font: .7rem var(--font-code); letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 46rem) { .feature-grid { grid-template-columns: 1fr; } }
+
+.site-footer .agora-site-brand svg{width:24px;height:24px}
