@@ -1,10 +1,9 @@
-import { JetBrains_Mono, Newsreader, Space_Grotesk } from "next/font/google"
+import { Inter, JetBrains_Mono, Newsreader } from "next/font/google"
 
 // All three faces are OFL and self-hosted at build time by next/font/google:
 // no font files in this repo, no runtime request to gstatic. next/font must be
 // called in app source, so this file fills the design system's three slots.
-export const body = Space_Grotesk({
-  weight: ["400", "500"],
+export const body = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--aisocratic-font-body",
