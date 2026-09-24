@@ -1,5 +1,5 @@
 import type { BoardCard } from "./board"
-import type { Workflow } from "./workflow"
+import { TYPE_LEVELS, typeLevel, type Workflow } from "./workflow"
 
 export type CardProperty = "description" | "priority" | "metadata" | "type" | "assignee"
 export type ColumnSort = "manual" | "priority-desc" | "priority-asc" | "created-desc" | "created-asc" | "updated-desc"
@@ -23,10 +23,28 @@ export function sortCards(cards: BoardCard[], sort: ColumnSort): BoardCard[] {
     return order || tie(a, b)
   })
 }
-export function focusCards(cards: BoardCard[], workflow: Workflow) {
-  const roleOf = (card: BoardCard) => workflow.columns.find(column => column.id === card.column)?.role
-  return {
-    inProgress: sortCards(cards.filter(card => !card.archived && ["doing", "review"].includes(roleOf(card) ?? "")), "priority-desc"),
-    upNext: sortCards(cards.filter(card => !card.archived && roleOf(card) === "todo"), "priority-desc"),
+/* Group work under the project it belongs to, following parents up the chain so
+   a task under an epic still lands beneath that epic's project. Work with no
+   project of its own is listed last rather than hidden. */
+export function projectGroups(cards: BoardCard[], workflow: Workflow) {
+  const live = cards.filter(card => !card.archived)
+  const byId = new Map(live.map(card => [card.id, card]))
+  const isProject = (card: BoardCard) => typeLevel(workflow, card.type) === TYPE_LEVELS.project
+  const projectOf = (card: BoardCard) => {
+    const seen = new Set<string>()
+    let current: BoardCard | undefined = card
+    while (current && !seen.has(current.id)) {
+      if (isProject(current)) return current
+      seen.add(current.id)
+      current = current.parentId ? byId.get(current.parentId) : undefined
+    }
+    return undefined
   }
+  const projects = sortCards(live.filter(isProject), "priority-desc")
+  const groups = projects.map(project => ({
+    project,
+    cards: sortCards(live.filter(card => card.id !== project.id && projectOf(card)?.id === project.id), "priority-desc"),
+  }))
+  const loose = sortCards(live.filter(card => !isProject(card) && !projectOf(card)), "priority-desc")
+  return { groups, loose }
 }

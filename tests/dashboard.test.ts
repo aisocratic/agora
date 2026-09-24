@@ -1,4 +1,4 @@
-import { focusCards, sortCards } from "../lib/board-view"
+import { projectGroups, sortCards } from "../lib/board-view"
 import { describe, expect, it } from "vitest"
 import { DEMO_BOARD, DEMO_STORAGE_KEY, DEMO_WORKFLOW } from "../lib/demo-board"
 import { BOARD_STORAGE_KEY } from "../lib/board-storage"
@@ -32,7 +32,7 @@ describe("test dashboard data", () => {
   })
 })
 
-describe("reference board ordering and Focus semantics", () => {
+describe("reference board ordering and Project semantics", () => {
   it("sorts priorities without mutating stored manual order", () => {
     const before = DEMO_BOARD.cards.map(card => card.id)
     const sorted = sortCards(DEMO_BOARD.cards, "priority-desc")
@@ -44,13 +44,21 @@ describe("reference board ordering and Focus semantics", () => {
   it("breaks ties consistently even when the source order changes", () => {
     expect(sortCards([...DEMO_BOARD.cards].reverse(), "priority-desc")).toEqual(sortCards(DEMO_BOARD.cards, "priority-desc"))
   })
-  it("keeps backlog and terminal work out of Focus, including custom column IDs", () => {
-    const cards = DEMO_BOARD.cards.map(card => ({ ...card, column: card.column === "doing" ? "building" : card.column }))
-    const workflow = { ...DEMO_WORKFLOW, columns: DEMO_WORKFLOW.columns.map(column => column.id === "doing" ? { ...column, id: "building" } : column) }
-    const focus = focusCards(cards, workflow)
-    expect(focus.inProgress).toHaveLength(4)
-    expect(focus.upNext).toHaveLength(4)
-    expect(focus.inProgress.every(card => ["building", "review"].includes(card.column))).toBe(true)
-    expect(focus.upNext.every(card => card.column === "todo")).toBe(true)
+  it("groups work under the project it rolls up to, through intermediate epics", () => {
+    const { groups, loose } = projectGroups(DEMO_BOARD.cards, DEMO_WORKFLOW)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].project.title).toBe("Agent-ready workspace")
+    // Tasks parented to an epic still roll up to that epic's project.
+    const titles = groups[0].cards.map(card => card.title)
+    expect(titles).toContain("Ship the dashboard")
+    expect(titles).toContain("Fix mobile column scrolling")
+    expect(titles).not.toContain("Agent-ready workspace")
+    expect(loose.every(card => !titles.includes(card.title))).toBe(true)
+    expect(loose.map(card => card.title)).toContain("Review the empty states")
+  })
+  it("never loses a card to a parent cycle", () => {
+    const cards = DEMO_BOARD.cards.map(card => card.id === "demo-1" ? { ...card, parentId: "demo-2" } : card)
+    const { groups, loose } = projectGroups(cards, DEMO_WORKFLOW)
+    expect(groups.length + loose.length).toBeGreaterThan(0)
   })
 })

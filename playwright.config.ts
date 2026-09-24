@@ -9,14 +9,18 @@ export default defineConfig({
     screenshot: "only-on-failure",
     channel: process.env.CI ? undefined : "chrome",
   },
+  // The Pages site mounts the plain board; the Next app mounts the workspace.
+  // Each project runs the specs written for the presentation it actually ships.
   projects: [
     {
       name: "pages-desktop",
+      testMatch: /(board|graph)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:4188" },
     },
-    { name: "pages-mobile", use: { ...devices["Pixel 7"], baseURL: "http://127.0.0.1:4188" } },
+    { name: "pages-mobile", testMatch: /(board|graph)\.spec\.ts/, use: { ...devices["Pixel 7"], baseURL: "http://127.0.0.1:4188" } },
     {
       name: "app-desktop",
+      testMatch: /workspace\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:4189" },
     },
   ],

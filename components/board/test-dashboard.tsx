@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { LogoMark } from "@aisocratic/design/brand"
-import { LayoutGrid } from "lucide-react"
-import { ThemeToggle } from "@aisocratic/design/components/theme-toggle"
-import { Board } from "@/components/board/board"
 import { BoardStore } from "@/lib/board-storage"
 import { DEMO_BOARD, DEMO_STORAGE_KEY, DEMO_WORKFLOW } from "@/lib/demo-board"
+import { WorkspaceShell } from "@/components/board/workspace-shell"
 
+/* The demo dashboard: the same workspace as the product board at `/`, backed by
+   a seeded board in its own storage key so changes here are safe to try. */
 export function TestDashboard({ homeHref = "/" }: { homeHref?: string }) {
   const [store] = useState(() => new BoardStore({
     read: () => window.localStorage.getItem(DEMO_STORAGE_KEY) ?? JSON.stringify(DEMO_BOARD),
@@ -20,12 +19,5 @@ export function TestDashboard({ homeHref = "/" }: { homeHref?: string }) {
       return () => window.removeEventListener("storage", onStorage)
     },
   }))
-  return <main className="agora-dashboard agora-test-shell">
-    <Board workspace store={store} workflow={DEMO_WORKFLOW} workspaceNav={
-      <nav className="agora-dashboard-nav" aria-label="Workspace">
-        <a href={homeHref} aria-label="Agora home" className="agora-brand"><LogoMark size={24} aria-hidden="true" />Agora</a>
-        <strong className="agora-workspace-tab"><LayoutGrid size={14} />Cards</strong>
-      </nav>
-    } workspaceActions={<ThemeToggle />} />
-  </main>
+  return <WorkspaceShell store={store} workflow={DEMO_WORKFLOW} homeHref={homeHref} preferencesKey="agora.test-dashboard.view.v2" />
 }

@@ -515,6 +515,10 @@ html:has(.agora-board) {
 .agora-priority-dot[data-priority="3"] { background: #ef4444; opacity: 1; }
 .agora-focus-more { width: 100%; padding: 10px; background: none; color: var(--muted-foreground); font: 12px var(--font-code); border: 0; cursor: pointer; }
 .agora-focus-empty { max-width: 672px; margin: auto; padding: 64px 16px; border: 1px solid var(--border); border-radius: 8px; text-align: center; font: 13px var(--font-code); color: var(--muted-foreground); }
+/* The project heading doubles as the way into the project card itself. */
+.agora-focus-project { padding: 0; background: none; border: 0; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+.agora-focus-project:hover { color: var(--foreground); }
+.agora-focus .agora-focus-empty { max-width: none; margin: 0; padding: 16px; border: 0; border-radius: 0; text-align: left; }
 .agora-test-shell { padding-top: 40px; }
 .agora-test-shell .agora-dashboard-nav { border: 0; padding-bottom: 0; margin-bottom: 32px; gap: 12px; }
 .agora-workspace-tab { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--muted); font-size: 13px; }
@@ -569,6 +573,10 @@ html:has(.agora-board) {
 .agora-workspace-editor .agora-comments article { padding: 8px 0; }
 .agora-workspace-editor .agora-comments textarea { min-height: 64px; margin-top: 12px; }
 .agora-editor-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+/* The linked-cards question, asked in place rather than in a second dialog. */
+.agora-editor-confirm { margin-top: 20px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--secondary); }
+.agora-editor-confirm p { margin: 0 0 12px; font-size: var(--text-micro); }
+.agora-editor-confirm .agora-dialog-actions { margin-top: 0; }
 .agora-editor-save { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; color: var(--muted-foreground); font: 10px var(--font-code); }
 @media (max-width: 640px) { .agora-workspace-editor { padding: 16px; max-height: 94dvh; } .agora-workspace-editor .agora-task-fields > .agora-fields { grid-template-columns: 1fr; } .agora-editor-identity { grid-template-columns: 1fr 1fr; } .agora-editor-identity label:last-child { grid-column: 1 / -1; } .agora-bulk-actions { gap: 6px; padding: 10px; } }
 .agora-workspace-editor { position: fixed; inset: 0; margin: auto; }
@@ -582,8 +590,8 @@ html:has(.agora-board) {
 .agora-workspace .agora-workspace-controls > *, .agora-workspace .agora-controls-right > * { flex-shrink: 0; }
 .agora-workspace .agora-controls-right { flex-wrap: nowrap; }
 .agora-workspace-controls .agora-btn, .agora-workspace-controls .agora-workspace-tab { height: 32px; min-height: 32px; box-sizing: border-box; white-space: nowrap; }
-.agora-workspace .agora-view-switch { height: 32px; margin: 0; padding: 0; display: inline-flex; align-items: center; }
-.agora-workspace .agora-view-switch .agora-btn { height: 32px; min-height: 32px; }
+.agora-workspace .agora-view-switch { height: 32px; margin: 0; padding: 2px; display: inline-flex; align-items: center; box-sizing: border-box; }
+.agora-workspace .agora-view-switch .agora-btn { height: 26px; min-height: 26px; }
 .agora-select { height: 32px; min-height: 32px; font: 12px var(--font-body); background: var(--background); color: var(--foreground); }
 .agora-menu-field .agora-select, .agora-editor-identity .agora-select, .agora-fields .agora-select { width: 100%; }
 .agora-select-content { z-index: 200; font: 12px var(--font-body); }

@@ -36,7 +36,7 @@ import {
 } from "../../lib/board"
 import { RemoteBoardStore } from "../../lib/remote-board-store"
 import { BoardStore, browserStorage, type BoardController } from "../../lib/board-storage"
-import { DEFAULT_WORKFLOW, type Workflow } from "../../lib/workflow"
+import { DEFAULT_WORKFLOW, TYPE_LEVELS, typeLevel, type Workflow } from "../../lib/workflow"
 import { WorkspaceEditor } from "./workspace-editor"
 import { QuickAdd } from "./quick-add"
 import { PriorityStar } from "./priority-star"
@@ -44,7 +44,7 @@ import { BulkActions, type BulkCommand } from "./bulk-actions"
 import { BoardSelect } from "./board-select"
 import { TaskFields } from "./task-fields"
 import { BoardMenu, CheckMenu, useBoardPreferences } from "./view-controls"
-import { FocusView } from "./focus-view"
+import { ProjectView } from "./project-view"
 import { SORT_OPTIONS, sortCards, type ColumnSort } from "../../lib/board-view"
 import "./board.css"
 
@@ -533,17 +533,18 @@ function EdgeDestination({ id, label }: { id: string; label: string }) {
 }
 
 type Editor = { card?: BoardCard; column: ColumnId; revision?: number; newId?: string }
-export function Board({ store: providedStore, mode = "local", workflow: providedWorkflow = DEFAULT_WORKFLOW, workspace = false, workspaceNav, workspaceActions }: { workspaceNav?: ReactNode; workspaceActions?: ReactNode; store?: BoardController; mode?: "local" | "shared"; workflow?: Workflow; workspace?: boolean }) {
+export function Board({ store: providedStore, mode = "local", workflow: providedWorkflow = DEFAULT_WORKFLOW, workspace = false, workspaceNav, workspaceActions, preferencesKey }: { workspaceNav?: ReactNode; workspaceActions?: ReactNode; store?: BoardController; mode?: "local" | "shared"; workflow?: Workflow; workspace?: boolean; preferencesKey?: string }) {
   const [store] = useState<BoardController>(() => providedStore ?? (mode === "shared" ? new RemoteBoardStore() : makeStore()))
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot)
   useEffect(() => store.connect(), [store])
   const [editor, setEditor] = useState<Editor | null>(null)
-  const [preferences, setPreferences] = useBoardPreferences(workspace ? "agora.test-dashboard.view.v2" : "agora.board.view.v1")
+  /* Scope and collapsed hold card IDs, so each board needs its own key. */
+  const [preferences, setPreferences] = useBoardPreferences(preferencesKey ?? (workspace ? "agora.test-dashboard.view.v2" : "agora.board.view.v1"))
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
-  const [legacyView, setLegacyView] = useState<"board" | "focus" | "graph">("board")
+  const [legacyView, setLegacyView] = useState<"board" | "project" | "graph">("board")
   const view = workspace ? preferences.view : legacyView
-  const setView = (view: "board" | "focus" | "graph") => {
+  const setView = (view: "board" | "project" | "graph") => {
     setSelectedIds(new Set())
     if (workspace) setPreferences({ view }); else setLegacyView(view)
   }
@@ -654,6 +655,12 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
       : destination.length
     mutate({ type: "move", id: String(dragged.id), column: columnId, position })
   }
+  /* Shared boards review agent suggestions from either presentation. */
+  const suggestionsInbox = mode === "shared" ? <SuggestionsInbox board={board} revision={snapshot.revision} workflow={workflow} ready={ready} onRefresh={async () => { await store.refresh?.(); return store.getSnapshot().revision ?? 0 }} onOpenCard={async (id) => {
+    await store.refresh?.(); const latest = store.getSnapshot(); const card = latest.board.cards.find(card => card.id === id)
+    if (card) setEditor({ card, column: card.column, revision: latest.revision })
+    else setMessage("That accepted card is no longer on the board. Its suggestion history is retained.")
+  }} /> : null
   return (
     <WorkflowContext.Provider value={{ workflow, columns }}><SelectionContext.Provider value={{ enabled: workspace, selected: selectedIds, toggle: id => setSelectedIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next }) }}><DisplayContext.Provider value={workspace ? { description: preferences.properties.includes("description"), metadata: preferences.properties.includes("metadata"), compact: preferences.fullCardLimit === 0, priority: preferences.properties.includes("priority"), type: preferences.properties.includes("type"), assignee: preferences.properties.includes("assignee") } : { description, metadata, compact, priority: true, type: true, assignee: true }}><div className={`agora-board${workspace ? " agora-workspace" : ""}`} aria-label="Agora board">
       {!workspace && <div className="agora-toolbar">
@@ -670,11 +677,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
           </p>
         </div>
         <div className="agora-actions">
-          {mode === "shared" && <SuggestionsInbox board={board} revision={snapshot.revision} workflow={workflow} ready={ready} onRefresh={async () => { await store.refresh?.(); return store.getSnapshot().revision ?? 0 }} onOpenCard={async (id) => {
-            await store.refresh?.(); const latest = store.getSnapshot(); const card = latest.board.cards.find(card => card.id === id)
-            if (card) setEditor({ card, column: card.column, revision: latest.revision })
-            else setMessage("That accepted card is no longer on the board. Its suggestion history is retained.")
-          }} />}
+          {suggestionsInbox}
 
 
           <button
@@ -763,12 +766,11 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
         </p>
       )}
       {ready && !readOnly && !workspace && <div className="agora-controls">
-        <div className="agora-view-switch" role="group" aria-label="Board view">
-          <button className="agora-btn" aria-pressed={view === "board"} onClick={() => setView("board")}><LayoutGrid size={14} />Board</button>
-          <button className="agora-btn" aria-pressed={view === "focus"} onClick={() => setView("focus")}><Target size={14} />Focus</button>
+        <div className="agora-view-switch" role="group" aria-label="Workspace sections">
+          <button className="agora-btn" aria-pressed={view === "board"} onClick={() => setView("board")}><LayoutGrid size={14} />Cards</button>
+          <button className="agora-btn" aria-pressed={view === "project"} onClick={() => setView("project")}><Target size={14} />Projects</button>
           <button className="agora-btn" aria-pressed={view === "graph"} onClick={() => setView("graph")}>Graph</button>
         </div>
-        <span className="agora-save-state"><i />{mode === "shared" ? "Live" : "Local"}</span>
         <label className="agora-search"><Search size={14} /><input aria-label="Search cards" placeholder="Search cards…" value={search} onChange={event => setSearch(event.target.value)} /></label>
         <details className="agora-property-menu"><summary className="agora-btn">Properties</summary><div>
           <label><input type="checkbox" checked={description} onChange={event => setDescription(event.target.checked)} />Description</label>
@@ -781,15 +783,15 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
       </div>}
       {ready && !readOnly && workspace && <div className="agora-controls agora-workspace-controls">
         {workspaceNav}
-        <button className="agora-btn agora-new-task" disabled={pending} onClick={() => setEditor({ column: initialColumn, revision: snapshot.revision, newId: crypto.randomUUID() })}><Plus size={14} />New task</button>
-        <div className="agora-view-switch" role="group" aria-label="Cards view">
-          <button className="agora-btn" aria-pressed={view === "board"} onClick={() => setView("board")}><LayoutGrid size={14} />Board</button>
-          <button className="agora-btn" aria-pressed={view === "focus"} onClick={() => setView("focus")}><Target size={14} />Focus</button>
+        <div className="agora-view-switch" role="group" aria-label="Workspace sections">
+          <button className="agora-btn" aria-pressed={view === "board"} onClick={() => setView("board")}><LayoutGrid size={14} />Cards</button>
+          <button className="agora-btn" aria-pressed={view === "project"} onClick={() => setView("project")}><Target size={14} />Projects</button>
         </div>
+        <button className="agora-btn agora-new-task" disabled={pending} onClick={() => setEditor({ column: initialColumn, revision: snapshot.revision, newId: crypto.randomUUID() })}><Plus size={14} />New task</button>
         {view === "board" && board.cards.some(card => card.parentId && !card.archived) && <button className="agora-btn" onClick={() => setPreferences({ collapsed: allCollapsed ? [] : epicIds })}>{allCollapsed ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />}{allCollapsed ? "Expand all" : "Collapse all"}</button>}
-        <span className="agora-save-state" title={unsaved ? "Changes stay in this tab" : "Test board saved in this browser"}><i />{unsaved ? "Unsaved" : "Local"}</span>
         <div className="agora-controls-right">
-          <BoardMenu label={preferences.scope ? "Epic scope" : "Scope"} icon={<Target size={14} />}><label className="agora-menu-field">Epic<BoardSelect aria-label="Scope to epic" value={preferences.scope ?? ""} onValueChange={value => setPreferences({ scope: value || null, collapsed: [] })} options={[{ value: "", label: "All work" }, ...board.cards.filter(card => card.type === "epic" && !card.archived).map(card => ({ value: card.id, label: card.title }))]} /></label></BoardMenu>
+          {suggestionsInbox}
+          <BoardMenu label={preferences.scope ? "Scoped" : "Scope"} icon={<Target size={14} />}><label className="agora-menu-field">Project or epic<BoardSelect aria-label="Scope to project or epic" value={preferences.scope ?? ""} onValueChange={value => setPreferences({ scope: value || null, collapsed: [] })} options={[{ value: "", label: "All work" }, ...board.cards.filter(card => !card.archived && typeLevel(workflow, card.type) > TYPE_LEVELS.task).map(card => ({ value: card.id, label: card.title }))]} /></label></BoardMenu>
           <CheckMenu label={`${preferences.properties.length}/5 properties`} icon={<Eye size={14} />} options={[{id:"description",label:"Description"},{id:"priority",label:"Priority"},{id:"metadata",label:"Info bar"},{id:"type",label:"Type"},{id:"assignee",label:"Assignee"}]} selected={preferences.properties} onChange={properties => setPreferences({ properties: properties as typeof preferences.properties })} />
           <BoardMenu label={preferences.fullCardLimit < 0 ? "All full size" : `Full cards: ${preferences.fullCardLimit}`} icon={<Rows3 size={14} />}>
             {[5,10,15,-1].map(limit => <button className="agora-menu-option" aria-pressed={preferences.fullCardLimit === limit} key={limit} onClick={() => setPreferences({ fullCardLimit: limit })}>{limit < 0 ? "All cards" : `First ${limit} cards`}</button>)}
@@ -806,10 +808,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
         </div>
         {workspaceActions}
       </div>}
-      {ready && !readOnly && view === "focus" && (workspace ? <FocusView cards={visibleCards} workflow={workflow} onOpen={card => setEditor({ card, column: card.column, revision: snapshot.revision })} /> : <div className="agora-focus" aria-label="Focus cards">
-        {visibleCards.length === 0 && <p className="agora-empty">No matching cards.</p>}
-        {visibleCards.map(card => <button className="agora-focus-row" key={card.id} onClick={() => setEditor({ card, column: card.column, revision: snapshot.revision })}><span className="agora-badge" data-tone={card.column}>{columns.find(column => column.id === card.column)?.label}</span><span>{card.title}</span><span className="agora-focus-assignee">{card.assignee}</span></button>)}
-      </div>)}
+      {ready && !readOnly && view === "project" && <ProjectView cards={visibleCards} workflow={workflow} onOpen={card => setEditor({ card, column: card.column, revision: snapshot.revision })} />}
       {ready && !readOnly && view === "graph" && <DependencyGraph board={board} workflow={workflow} onOpenCard={card => setEditor({ card, column: card.column, revision: snapshot.revision })} />}
       {ready && !readOnly && view === "board" && (
         <>

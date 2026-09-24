@@ -1,6 +1,6 @@
 import { BoardSelect } from "./board-select"
 import type { BoardCard, BoardData, CardDraft } from "../../lib/board"
-import type { Workflow } from "../../lib/workflow"
+import { typeLevel, type Workflow } from "../../lib/workflow"
 
 export function TaskFields({ draft, onChange, board, card, workflow, prefix, hideIdentity = false }: {
   hideIdentity?: boolean; draft: CardDraft; onChange: (draft: CardDraft) => void; board: BoardData; card?: BoardCard; workflow: Workflow; prefix: string
@@ -13,6 +13,10 @@ export function TaskFields({ draft, onChange, board, card, workflow, prefix, hid
       if (item.parentId && blockedParents.has(item.parentId) && !blockedParents.has(item.id)) { blockedParents.add(item.id); found = true }
     }
   }
+  /* A card only nests under a strictly higher level: tasks under epics or
+     projects, epics under projects, projects at the top. */
+  const level = typeLevel(workflow, draft.type)
+  const parents = board.cards.filter(item => !blockedParents.has(item.id) && typeLevel(workflow, item.type) > level)
   const fields = [
     { key: "type", label: "Type", options: workflow.types },
     { key: "assignee", label: "Assignee", options: workflow.people },
@@ -36,9 +40,9 @@ export function TaskFields({ draft, onChange, board, card, workflow, prefix, hid
         </select>}
       </div>)}
       <div><label htmlFor={`${prefix}-pr`}>PR URL</label><input id={`${prefix}-pr`} type="url" value={draft.prUrl ?? ""} onChange={(event) => onChange({ ...draft, prUrl: event.target.value || null })} placeholder="https://github.com/owner/repo/pull/1" /></div>
-      <div><label htmlFor={`${prefix}-parent`}>Parent card</label>{hideIdentity ? <BoardSelect id={`${prefix}-parent`} value={draft.parentId ?? ""} onValueChange={value => onChange({ ...draft, parentId: value || null })} options={[{value:"",label:"No parent"}, ...board.cards.filter(item => !blockedParents.has(item.id)).map(item => ({value:item.id,label:`${item.title}${item.archived ? " (archived)" : ""}`}))]} /> : <select id={`${prefix}-parent`} value={draft.parentId ?? ""} onChange={(event) => onChange({ ...draft, parentId: event.target.value || null })}>
+      <div><label htmlFor={`${prefix}-parent`}>Parent card</label>{hideIdentity ? <BoardSelect id={`${prefix}-parent`} value={draft.parentId ?? ""} onValueChange={value => onChange({ ...draft, parentId: value || null })} options={[{value:"",label:"No parent"}, ...parents.map(item => ({value:item.id,label:`${item.title}${item.archived ? " (archived)" : ""}`}))]} /> : <select id={`${prefix}-parent`} value={draft.parentId ?? ""} onChange={(event) => onChange({ ...draft, parentId: event.target.value || null })}>
         <option value="">No parent</option>
-        {board.cards.filter((item) => !blockedParents.has(item.id)).map((item) => <option key={item.id} value={item.id}>{item.title}{item.archived ? " (archived)" : ""}</option>)}
+        {parents.map((item) => <option key={item.id} value={item.id}>{item.title}{item.archived ? " (archived)" : ""}</option>)}
       </select>}</div>
       <fieldset><legend>Dependencies</legend>
         {board.cards.filter((item) => item.id !== card?.id).map((item) => <label key={item.id} className="agora-check">

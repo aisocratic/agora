@@ -15,7 +15,7 @@ export function CheckMenu({ label, icon, options, selected, onChange }: { label:
   </BoardMenu>
 }
 export type BoardPreferences = {
-  view: "board" | "focus" | "graph"
+  view: "board" | "project" | "graph"
   types: string[] | null
   columns: string[] | null
   properties: CardProperty[]
@@ -33,7 +33,7 @@ export function useBoardPreferences(key: string) {
       if (!value || typeof value !== "object") return
       const strings = (input: unknown): input is string[] => Array.isArray(input) && input.every(item => typeof item === "string")
       const next = { ...DEFAULT_PREFERENCES }
-      if (["board", "focus", "graph"].includes(value.view)) next.view = value.view
+      if (["board", "project", "graph"].includes(value.view)) next.view = value.view
       if (typeof value.scope === "string") next.scope = value.scope
       if (strings(value.types)) next.types = value.types
       if (strings(value.columns)) next.columns = value.columns

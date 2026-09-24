@@ -27,6 +27,7 @@ export function WorkspaceEditor({ card, column, newId, board, store, workflow, o
   const [posting, setPosting] = useState(false)
   const postingRef = useRef(false)
   const [showAllChildren, setShowAllChildren] = useState(false)
+  const [confirmArchive, setConfirmArchive] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saving = useRef<Promise<void> | null>(null)
   const prefix = useId()
@@ -79,10 +80,28 @@ export function WorkspaceEditor({ card, column, newId, board, store, workflow, o
     if (!exists.current) { onClose(); return }
     try { await flush(); onClose() } catch { /* Keep the draft open for correction or retry. */ }
   }
+  /* Archiving a project or epic leaves its breakdown stranded, so offer to take
+     the whole subtree — every card that rolls up to this one, at any depth. */
+  const linked: BoardCard[] = []
+  for (const walk = [id]; walk.length; ) {
+    const parent = walk.shift()!
+    for (const item of board.cards) {
+      if (item.archived || item.id === id || item.parentId !== parent || linked.some(seen => seen.id === item.id)) continue
+      linked.push(item)
+      walk.push(item.id)
+    }
+  }
+  const typeLabel = (workflow.types.find(type => type.id === draft.type)?.label ?? "Task").toLowerCase()
   const run = async (action: () => Promise<void>) => {
     try { await flush(); await action() }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Could not finish this action.") }
   }
+  const archive = (withLinked: boolean) => run(async () => {
+    // Children first: a failure part-way leaves no card orphaned under an archived parent.
+    if (withLinked) for (const item of linked) await store.dispatch({ type: "archive", id: item.id })
+    await store.dispatch({ type: "archive", id })
+    onClose()
+  })
   return <Dialog open onOpenChange={open => { if (!open) void close() }}><DialogContent showCloseButton={false} className="agora-dialog agora-workspace-editor" aria-describedby={undefined}>
     <DialogTitle className="agora-sr-only">{created ? "Task details" : "New task"}</DialogTitle>
     <header className="agora-editor-heading">
@@ -121,8 +140,16 @@ export function WorkspaceEditor({ card, column, newId, board, store, workflow, o
       }}>{posting ? "Posting…" : "Comment"}</button>
     </section>}
     {error && <p className="agora-dialog-error" role="alert">{error}</p>}
+    {confirmArchive && <section className="agora-editor-confirm" aria-label={`Archive ${typeLabel}`}>
+      <p>“{draft.title}” has {linked.length} linked {linked.length === 1 ? "card" : "cards"} under it. Archive {linked.length === 1 ? "it" : "them"} as well?</p>
+      <div className="agora-dialog-actions">
+        <button className="agora-btn" onClick={() => setConfirmArchive(false)}>Cancel</button>
+        <button className="agora-btn" onClick={() => void archive(false)}>Archive only this {typeLabel}</button>
+        <button className="agora-btn agora-primary" onClick={() => void archive(true)}>Archive all {linked.length + 1}</button>
+      </div>
+    </section>}
     <footer className="agora-editor-footer">
-      {created && <button className="agora-btn" onClick={() => void run(async () => { await store.dispatch({ type: "archive", id: id }); onClose() })}><Archive size={13} />Archive task</button>}
+      {created && <button className="agora-btn" onClick={() => linked.length ? setConfirmArchive(true) : void archive(false)}><Archive size={13} />Archive {typeLabel}</button>}
       <span role="status" className="agora-editor-save">{created && <>{saveState === "Saved" && <Check size={12} />}{saveState}</>}</span>
       <button className="agora-btn" onClick={() => void close()}>{created ? "Close" : "Cancel"}</button>
       <button className="agora-btn agora-primary" disabled={!draft.title.trim() || saveState === "Saving…"} onClick={() => void run(async () => { if (!card) onClose() })}>{created ? "Save now" : "Create task"}</button>
