@@ -392,9 +392,14 @@ html:has(.agora-board) {
 .agora-column-head { padding: 0 4px 8px; margin: 0; }
 .agora-column-head h3 { display: flex; align-items: center; font-size: 12px; letter-spacing: normal; text-transform: none; }
 .agora-count { font-size: 12px; }
-.agora-cards { gap: 8px; padding: 6px; background: color-mix(in srgb, var(--muted) 30%, transparent); border-radius: 8px; min-height: 96px; }
-.agora-card { padding: 8px; background: var(--card); border-radius: 8px; box-shadow: none; }
-.agora-card:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); }
+/* The column is a well and the cards sit on it in a clearly different shade:
+   a darker well under light cards in light mode; in dark mode the page,
+   the column and the cards step from darkest to lightest. */
+.agora-board { --agora-column: color-mix(in srgb, var(--muted) 70%, var(--background)); --agora-card: var(--card); }
+.dark .agora-board { --agora-column: var(--card); --agora-card: var(--secondary); }
+.agora-cards { gap: 8px; padding: 6px; background: var(--agora-column); border-radius: 8px; min-height: 96px; }
+.agora-card { padding: 8px; background: var(--agora-card, var(--card)); border-radius: 8px; box-shadow: none; }
+.agora-card:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); background: color-mix(in srgb, var(--agora-card, var(--card)) 93%, var(--foreground)); }
 .agora-card-top { gap: 8px; align-items: flex-start; }
 .agora-card-title { font-family: var(--font-body); font-size: 15px; font-weight: 400; line-height: 1.375; padding: 0; }
 .agora-card-description { font-family: var(--font-code); font-size: 11px; line-height: 1.5; -webkit-line-clamp: 1; margin: 4px 0; }
@@ -408,22 +413,34 @@ html:has(.agora-board) {
 .agora-badge[data-tone="doing"] { background: #eab3081a; color: #b89106; }
 .agora-badge[data-tone="review"], .agora-badge[data-tone="epic"] { background: #a855f71a; color: #a855f7; }
 .agora-badge[data-tone="done"] { background: #22c55e1a; color: #16a34a; }
+.agora-badge[data-tone="project"] { background: #14b8a626; color: #0d9488; }
+.dark .agora-badge[data-tone="project"] { color: #2dd4bf; }
 .agora-badge[data-tone="bug"], .agora-badge[data-tone="wont-do"] { background: #ef44441a; color: #ef4444; }
 .agora-model { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agora-card-meta > .agora-card-flags { margin-left: auto; flex-shrink: 0; gap: 5px; }
 .agora-flag { display: inline-flex; background: none; border: 0; color: var(--muted-foreground); opacity: .4; padding: 0; cursor: pointer; }
 .agora-flag[data-active="true"] { opacity: 1; color: #a855f7; }
 .agora-avatar { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--muted); font-size: 8px; }
+/* The avatar is a button: click it to reassign. An unassigned card shows a
+   faint "assign" avatar once the card is hovered or focused. */
+.agora-avatar-button { flex: none; padding: 0; border: 0; color: inherit; font-family: inherit; cursor: pointer; }
+.agora-avatar-button:hover, .agora-avatar-button:focus-visible, .agora-avatar-button[data-state="open"] { box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 55%, transparent); }
+.agora-avatar-button[data-empty] { border: 1px dashed var(--border); background: none; color: var(--muted-foreground); opacity: 0; }
+.agora-card:hover .agora-avatar-button[data-empty], .agora-card:focus-within .agora-avatar-button[data-empty], .agora-avatar-button[data-empty][data-state="open"] { opacity: 1; }
+@media (hover: none) { .agora-avatar-button[data-empty] { opacity: 1; } }
 .agora-card-foot { display: none; padding-top: 5px; border-top: 1px solid var(--border); }
 .agora-card:hover .agora-card-foot, .agora-card:focus-within .agora-card-foot { display: flex; }
 .agora-card-foot select { font-size: 10px; padding: 2px 4px; min-height: 24px; }
 .agora-card-foot .agora-icon { width: 24px; height: 24px; }
 .agora-card[data-compact="true"] .agora-card-description, .agora-card[data-compact="true"] .agora-card-meta { display: none; }
 .agora-empty { font: 11px/1.6 var(--font-code); }
+/* An empty column says so inside its own box. */
+.agora-cards > .agora-empty { display: flex; flex: 1; align-items: center; justify-content: center; border: 0; }
 .agora-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
 .agora-view-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 9px; background: var(--muted); }
 .agora-view-switch .agora-btn { border: 0; background: none; min-height: 26px; padding: 3px 9px; color: var(--muted-foreground); }
-.agora-view-switch .agora-btn[aria-pressed="true"] { background: var(--card); color: var(--foreground); box-shadow: 0 1px 3px #0001; }
+.agora-view-switch .agora-btn[aria-pressed="true"], .agora-view-switch .agora-btn[aria-current="page"] { background: var(--card); color: var(--foreground); box-shadow: 0 1px 3px #0001; }
+.agora-view-switch a.agora-btn { text-decoration: none; }
 .agora-save-state { display: flex; align-items: center; gap: 6px; font: 11px var(--font-code); border: 1px solid var(--border); padding: 8px; border-radius: 8px; color: var(--muted-foreground); }
 .agora-save-state i { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
 .agora-search { display: flex; align-items: center; gap: 6px; margin-left: auto; color: var(--muted-foreground); }
@@ -451,7 +468,6 @@ html:has(.agora-board) {
 .agora-inline-title { width: 100%; min-width: 0; background: var(--background); outline: 1px solid var(--ring); }
 .agora-card-foot { display: flex; position: absolute; left: 4px; right: 4px; top: calc(100% - 2px); z-index: 10; margin: 0; padding: 5px; background: var(--card); border: 1px solid var(--border); border-radius: 0 0 8px 8px; opacity: 0; pointer-events: none; }
 .agora-card:hover .agora-card-foot, .agora-card:focus-within .agora-card-foot { opacity: 1; pointer-events: auto; }
-.agora-nested-card { border-left: 1px solid var(--border); padding-left: 8px; }
 .agora-children-toggle { display: flex; align-items: center; gap: 4px; padding: 5px 8px 0; border: 0; background: none; color: var(--muted-foreground); font: 10px var(--font-code); cursor: pointer; }
 @media (hover: none) { .agora-edit { opacity: 1; } .agora-card-foot { position: static; opacity: 1; pointer-events: auto; margin-top: 5px; } }
 .agora-column-head { position: sticky; top: 0; z-index: 12; background: var(--background); }
@@ -491,7 +507,10 @@ html:has(.agora-board) {
 .agora-workspace .agora-column-head .agora-badge { font-size: 11px; }
 .agora-workspace .agora-card[data-compact="true"] { padding: 6px 8px; }
 .agora-workspace .agora-card[data-compact="true"] .agora-card-title { font-size: 12px; line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.agora-epic-badge { border: 0; cursor: pointer; gap: 3px; }
+/* How many cards sit inside, and the toggle that shows them: its own control,
+   apart from the type pill. */
+.agora-children-count { display: inline-flex; flex-shrink: 0; align-items: center; gap: 2px; padding: 2px 4px 2px 7px; border: 1px solid var(--border); border-radius: 999px; background: none; color: var(--muted-foreground); font: 10px/1.5 var(--font-code); cursor: pointer; }
+.agora-children-count:hover { background: var(--muted); color: var(--foreground); }
 .agora-compact-divider { display: flex; align-items: center; gap: 4px; padding: 4px 0 8px; color: var(--muted-foreground); font: 10px var(--font-code); white-space: nowrap; }
 .agora-compact-divider > span { height: 1px; background: var(--border); flex: 1; }
 .agora-compact-divider button { border: 0; padding: 0; background: none; color: var(--primary); font: inherit; cursor: pointer; }
@@ -505,20 +524,144 @@ html:has(.agora-board) {
 .agora-menu-reset { margin-top: 4px; padding: 8px; width: 100%; border: 0; border-top: 1px solid var(--border); background: none; color: var(--muted-foreground); text-align: left; font: inherit; cursor: pointer; }
 .agora-menu-field { display: grid; gap: 7px; padding: 8px; color: var(--muted-foreground); font: 11px var(--font-code); }
 .agora-menu-field select, .agora-menu-field input { padding: 7px 8px; border: 1px solid var(--border); border-radius: 5px; color: var(--foreground); background: var(--background); font: 12px var(--font-body); width: 100%; }
-.agora-focus-sections { max-width: 672px; margin: 0 auto; display: grid; gap: 24px; }
-.agora-focus-sections .agora-focus h3 { display: flex; gap: 8px; margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--border); font: 12px var(--font-code); letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); }
-.agora-focus-sections .agora-focus h3 span { opacity: .6; }
-.agora-focus-sections .agora-focus-row { padding: 12px 16px; gap: 12px; font-size: 14px; }
-.agora-focus-sections .agora-focus-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agora-priority-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--muted-foreground); opacity: .3; }
 .agora-priority-dot[data-priority="2"] { background: #eab308; opacity: 1; }
 .agora-priority-dot[data-priority="3"] { background: #ef4444; opacity: 1; }
-.agora-focus-more { width: 100%; padding: 10px; background: none; color: var(--muted-foreground); font: 12px var(--font-code); border: 0; cursor: pointer; }
+/* Project timeline: a label column beside a month track, in the spirit of the
+   planning page on the marketing admin. Rows fold per project and per epic. */
+.agora-projects { border: 1px solid var(--border); border-radius: 8px; background: var(--card); overflow-x: auto; }
+.agora-timeline-row { display: grid; grid-template-columns: var(--agora-timeline-label) minmax(0, 1fr); border-top: 1px solid var(--border); }
+.agora-timeline-head { border-top: 0; }
+.agora-timeline-head .agora-timeline-label { justify-content: space-between; padding: 6px 12px 6px 16px; font: 11px var(--font-code); letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); }
+.agora-timeline-months { position: relative; display: grid; }
+.agora-timeline-months span { display: flex; align-items: center; padding: 8px 10px; border-left: 1px solid var(--border); font: 12px var(--font-code); color: var(--muted-foreground); }
+.agora-timeline-months b { position: absolute; bottom: 0; transform: translate(-50%, 50%); z-index: 1; padding: 0 6px; border-radius: 4px; background: var(--primary); color: var(--primary-foreground); font: 10px/16px var(--font-code); }
+/* Projects reorder by their grip; the dragged one lifts above the rest. */
+.agora-timeline-grip { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 18px; height: 28px; margin-right: -4px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted-foreground); opacity: .45; cursor: grab; touch-action: none; }
+.agora-timeline-grip:hover, .agora-timeline-grip:focus-visible { opacity: 1; background: var(--muted); }
+.agora-timeline-group { position: relative; background: var(--card); }
+.agora-timeline-group[data-dragging] { z-index: 5; box-shadow: 0 8px 24px #0004; }
+.agora-timeline-group[data-dragging] .agora-timeline-grip { cursor: grabbing; }
+/* The divider between the names and the months drags to resize the name
+   column, anywhere along its height; a small grip at the top marks it. */
+.agora-projects-frame { --agora-timeline-label: 460px; position: relative; }
+.agora-timeline-resize { position: absolute; top: 1px; bottom: 1px; left: calc(var(--agora-timeline-label) - 3px); z-index: 6; width: 9px; cursor: col-resize; touch-action: none; }
+.agora-timeline-resize::before { content: ""; position: absolute; top: 9px; left: 2px; width: 5px; height: 18px; border-radius: 3px; background: var(--border); }
+.agora-timeline-resize::after { content: ""; position: absolute; top: 0; bottom: 0; left: 3px; width: 3px; border-radius: 2px; background: transparent; }
+.agora-timeline-resize:hover::after, .agora-timeline-resize:focus-visible::after, .agora-timeline-resize[data-dragging]::after { background: var(--primary); }
+.agora-timeline-resize:hover::before, .agora-timeline-resize:focus-visible::before, .agora-timeline-resize[data-dragging]::before { background: var(--primary); }
+.agora-timeline-resize:focus-visible { outline: none; }
+/* The names stay pinned while the months scroll sideways. */
+.agora-timeline-label { position: sticky; left: 0; z-index: 3; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 12px 0 8px; background: var(--card); box-shadow: 1px 0 0 var(--border); }
+.agora-timeline-project .agora-timeline-label { background: color-mix(in srgb, var(--muted) 50%, var(--card)); }
+.agora-timeline-row[data-depth]:hover .agora-timeline-label, .agora-timeline-row[data-open] .agora-timeline-label { background: color-mix(in srgb, var(--muted) 35%, var(--card)); }
+.agora-timeline-project { background: color-mix(in srgb, var(--muted) 50%, transparent); }
+.agora-timeline-project h3 { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 14px var(--font-display); }
+.agora-timeline-count { font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-timeline-fold { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted-foreground); cursor: pointer; transition: transform .15s; }
+.agora-timeline-fold[aria-expanded="true"] { transform: rotate(90deg); }
+button.agora-timeline-fold:hover { background: var(--muted); color: var(--foreground); }
+.agora-timeline-row[data-depth]:hover, .agora-timeline-row[data-open] { background: color-mix(in srgb, var(--muted) 35%, transparent); }
+.agora-timeline-title { display: grid; flex: 1; min-width: 0; }
+.agora-timeline-title > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agora-timeline-track { position: relative; min-height: 44px; }
+.agora-timeline-grid { position: absolute; inset: 0; display: grid; }
+.agora-timeline-grid i { border-left: 1px solid var(--border); }
+.agora-timeline-today { position: absolute; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--primary) 60%, transparent); }
+.agora-timeline-track [data-role] { --tone: var(--muted-foreground); }
+.agora-timeline-track [data-role="todo"] { --tone: #3b82f6; }
+.agora-timeline-track [data-role="doing"] { --tone: #eab308; }
+.agora-timeline-track [data-role="review"] { --tone: #a855f7; }
+.agora-timeline-track [data-role="done"] { --tone: #22c55e; }
+/* Undated work: a faint line over the stretch it has been active. */
+.agora-timeline-bar { position: absolute; top: 50%; height: 4px; min-width: 6px; max-width: 100%; transform: translateY(-50%); border-radius: 999px; background: var(--tone); opacity: .45; }
+/* A target month without a day: a dashed span across the month. */
+.agora-timeline-month { position: absolute; top: 50%; height: 10px; transform: translateY(-50%); border: 1px dashed var(--tone); border-radius: 999px; background: color-mix(in srgb, var(--tone) 15%, transparent); }
+.agora-timeline-track[data-compact] .agora-timeline-month { height: 6px; }
+.agora-timeline-month[data-role="backlog"] { --tone: color-mix(in srgb, var(--muted-foreground) 60%, transparent); background: var(--muted); }
+/* A target day: a dot with its date beneath. */
+.agora-timeline-point { position: absolute; top: 50%; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; transform: translate(-50%, -6px); }
+.agora-timeline-point i { width: 12px; height: 12px; border-radius: 50%; background: var(--tone); box-shadow: 0 0 0 3px var(--card); }
+.agora-timeline-point small { white-space: nowrap; font: 10px var(--font-code); color: var(--muted-foreground); }
+.agora-timeline-track[data-compact] .agora-timeline-point { transform: translate(-50%, -50%); }
+.agora-timeline-track[data-compact] .agora-timeline-point i { width: 8px; height: 8px; }
+.agora-timeline-point[data-overdue] i { background: #ef4444; }
+.agora-timeline-item { display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; padding: 8px 0; border: 0; background: none; color: var(--foreground); text-align: left; font: 14px var(--font-body); cursor: pointer; }
+.agora-timeline-title { gap: 1px; }
+.agora-timeline-title > span { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.agora-timeline-title small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-timeline-title .agora-timeline-subtitle { font: 12px var(--font-body); }
+.agora-timeline-title small[data-overdue] { color: #ef4444; }
+.agora-timeline-links { display: flex; flex-wrap: wrap; gap: 16px; }
+.agora-timeline-details p a { color: var(--primary); text-underline-offset: 3px; }
+.agora-timeline-open { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--primary); font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+/* Logos sit on white in both themes, like the planning page's logo tiles. */
+.agora-logo-tile { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 56px; height: 28px; padding: 3px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+.agora-logo-tile img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.agora-logo-tile[data-empty] { background: var(--muted); color: var(--muted-foreground); }
+.agora-logo-tile[data-dark] { background: #000; }
+.agora-logo-tile[data-photo] { padding: 0 !important; }
+.agora-logo-tile[data-photo] img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; }
+.agora-image-field { display: flex; align-items: center; gap: 8px; }
+.agora-image-field input { flex: 1; min-width: 0; }
+.agora-projects-view { display: grid; gap: 16px; }
+.agora-projects-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+/* Markers are links to their card: hovering shows the card, clicking goes to
+   it on the board. They get a slightly larger hover area than they look. */
+.agora-timeline-point, .agora-timeline-bar, .agora-timeline-month { padding: 0; font: inherit; color: inherit; text-decoration: none; cursor: pointer; appearance: none; }
+button.agora-timeline-point, a.agora-timeline-point { border: 0; background: none; }
+button.agora-timeline-bar, a.agora-timeline-bar { border: 0; }
+.agora-timeline-point::before, .agora-timeline-bar::before, .agora-timeline-month::before { content: ""; position: absolute; inset: -6px -3px; }
+.agora-timeline-point small { pointer-events: none; }
+.agora-timeline-point:hover i { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px color-mix(in srgb, var(--tone) 55%, transparent); }
+.agora-timeline-bar:hover { opacity: 1; }
+.agora-timeline-month:hover { background: color-mix(in srgb, var(--tone) 35%, transparent); }
+/* The hover card: the card behind a marker, shown just above it. */
+.agora-timeline-tip { position: fixed; z-index: 120; display: grid; gap: 6px; width: max-content; max-width: 300px; padding: 10px 12px; transform: translate(-50%, calc(-100% - 10px)); border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--foreground); box-shadow: 0 10px 30px #0005; pointer-events: none; }
+.agora-timeline-tip strong { font: 500 14px/1.3 var(--font-body); }
+.agora-timeline-tip p { display: -webkit-box; overflow: hidden; margin: 0; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--muted-foreground); font: 11px/1.5 var(--font-code); }
+.agora-timeline-tip-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.agora-timeline-tip small { font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-timeline-tip small[data-overdue] { color: #ef4444; }
+.agora-timeline-tip em { font: normal 10px var(--font-code); color: var(--muted-foreground); opacity: .7; }
+/* A row's assignee sits at its right edge, as its own control. */
+.agora-timeline-label > .agora-avatar-button { margin-left: 2px; }
+.agora-timeline-label .agora-avatar-button[data-empty] { opacity: .5; }
+/* Timeline span: page through time and choose how many months fit the view. */
+.agora-timeline-zoom { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.agora-timeline-range { min-width: 150px; text-align: center; font: 12px var(--font-code); color: var(--muted-foreground); }
+/* The one-month view marks each week: a faint line and its day number. */
+.agora-timeline-tick { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed color-mix(in srgb, var(--border) 70%, transparent); }
+.agora-timeline-months em { position: absolute; top: 50%; padding-left: 6px; transform: translateY(-50%); font: normal 11px var(--font-code); color: var(--muted-foreground); }
+.agora-calendar { display: grid; gap: 12px; }
+.agora-calendar-nav { display: flex; align-items: center; gap: 8px; font: 12px var(--font-code); color: var(--muted-foreground); }
+.agora-calendar-months { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.agora-calendar-month { padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+.agora-calendar-month h3 { margin: 0; font: 18px var(--font-display); }
+.agora-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 12px 0; }
+.agora-calendar-weekday { padding: 6px 0; text-align: center; font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-calendar-day { display: flex; align-items: center; justify-content: center; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted-foreground); font: 13px var(--font-body); }
+.agora-calendar-day[data-today] { box-shadow: inset 0 0 0 1px var(--primary); color: var(--foreground); }
+button.agora-calendar-day { background: var(--muted); color: var(--foreground); font-weight: 600; cursor: pointer; }
+button.agora-calendar-day[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
+.agora-calendar-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.agora-calendar-list li + li { border-top: 1px solid var(--border); }
+.agora-calendar-list li.agora-timeline-muted { padding: 10px 0; }
+.agora-calendar-list button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 10px 0; border: 0; background: none; color: var(--foreground); text-align: left; font: inherit; cursor: pointer; }
+.agora-calendar-text { display: grid; flex: 1; min-width: 0; }
+.agora-calendar-list strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 13px var(--font-body); }
+.agora-calendar-list small { font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-timeline-details { display: grid; grid-template-columns: calc(var(--agora-timeline-label) - 152px) minmax(0, 1fr); gap: 8px 32px; padding: 12px 16px 16px 120px; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--muted) 35%, transparent); font-size: 13px; }
+.agora-timeline-details dl { display: grid; grid-template-columns: 64px 1fr; gap: 4px 12px; margin: 0; }
+.agora-timeline-details dt { font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-timeline-details dd { margin: 0; }
+.agora-timeline-details p { margin: 0 0 8px; color: var(--muted-foreground); line-height: 1.5; }
+.agora-timeline-muted { color: var(--muted-foreground); font: 12px var(--font-code); }
+.agora-timeline-empty { margin: 0; padding: 12px 16px 12px 40px; border-top: 1px solid var(--border); }
 .agora-focus-empty { max-width: 672px; margin: auto; padding: 64px 16px; border: 1px solid var(--border); border-radius: 8px; text-align: center; font: 13px var(--font-code); color: var(--muted-foreground); }
 /* The project heading doubles as the way into the project card itself. */
 .agora-focus-project { padding: 0; background: none; border: 0; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
 .agora-focus-project:hover { color: var(--foreground); }
-.agora-focus .agora-focus-empty { max-width: none; margin: 0; padding: 16px; border: 0; border-radius: 0; text-align: left; }
 .agora-test-shell { padding-top: 40px; }
 .agora-test-shell .agora-dashboard-nav { border: 0; padding-bottom: 0; margin-bottom: 32px; gap: 12px; }
 .agora-workspace-tab { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--muted); font-size: 13px; }
@@ -541,6 +684,8 @@ html:has(.agora-board) {
 .agora-card-pr { display: inline-flex; align-items: center; flex-shrink: 0; gap: 2px; color: var(--muted-foreground); text-decoration: none; }
 .agora-card-pr:hover { color: var(--foreground); text-decoration: underline; }
 .agora-quick-add { padding: 6px; }
+/* In a column, adding a card is the last thing inside the column's box. */
+.agora-cards > .agora-quick-add { padding: 0 2px; }
 .agora-quick-add > button { display: flex; align-items: center; gap: 6px; width: 100%; padding: 6px 4px; border: 0; background: none; color: var(--muted-foreground); font: 12px var(--font-body); text-align: left; cursor: pointer; }
 .agora-quick-add > button:hover { color: var(--foreground); }
 .agora-quick-add > input { width: 100%; padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--foreground); font: 14px var(--font-display); }
@@ -554,6 +699,11 @@ html:has(.agora-board) {
 .agora-editor-heading > .agora-priority { margin-top: 5px; }
 .agora-editor-identity { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
 .agora-editor-identity label { display: grid; gap: 6px; font: 10px var(--font-code); color: var(--muted-foreground); }
+.agora-editor-planning { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 10px; margin: -8px 0 18px; }
+.agora-editor-planning > div { display: grid; align-content: start; gap: 6px; }
+.agora-editor-planning > div > label:first-child { font: 10px var(--font-code); color: var(--muted-foreground); }
+.agora-editor-planning input[type="date"], .agora-editor-planning input[type="month"], .agora-editor-planning input[type="url"] { min-width: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); padding: 7px 8px; font: 12px var(--font-body); }
+.agora-editor-planning .agora-check { display: flex; align-items: center; gap: 6px; font: 11px var(--font-body); color: var(--muted-foreground); }
 .agora-editor-identity select { min-width: 0; max-width: 100%; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); padding: 8px; font: 12px var(--font-body); }
 .agora-editor-description { display: block; min-height: 110px; width: 100%; resize: vertical; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); padding: 12px; font: 13px/1.7 var(--font-body); }
 .agora-workspace-editor .agora-task-fields { margin: 18px 0; font-size: 12px; }
@@ -578,7 +728,7 @@ html:has(.agora-board) {
 .agora-editor-confirm p { margin: 0 0 12px; font-size: var(--text-micro); }
 .agora-editor-confirm .agora-dialog-actions { margin-top: 0; }
 .agora-editor-save { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; color: var(--muted-foreground); font: 10px var(--font-code); }
-@media (max-width: 640px) { .agora-workspace-editor { padding: 16px; max-height: 94dvh; } .agora-workspace-editor .agora-task-fields > .agora-fields { grid-template-columns: 1fr; } .agora-editor-identity { grid-template-columns: 1fr 1fr; } .agora-editor-identity label:last-child { grid-column: 1 / -1; } .agora-bulk-actions { gap: 6px; padding: 10px; } }
+@media (max-width: 640px) { .agora-workspace-editor { padding: 16px; max-height: 94dvh; } .agora-workspace-editor .agora-task-fields > .agora-fields { grid-template-columns: 1fr; } .agora-editor-identity { grid-template-columns: 1fr 1fr; } .agora-editor-identity label:last-child { grid-column: 1 / -1; } .agora-editor-planning { grid-template-columns: 1fr; } .agora-bulk-actions { gap: 6px; padding: 10px; } }
 .agora-workspace-editor { position: fixed; inset: 0; margin: auto; }
 .agora-editor-heading > textarea:focus-visible { outline: none; box-shadow: 0 1px 0 var(--border); }
 
@@ -611,3 +761,91 @@ html:has(.agora-board) {
 /* Preserve the original board's contrast and always-accessible card controls. */
 .agora-board:not(.agora-workspace) .agora-card { background: var(--background); }
 .agora-board:not(.agora-workspace) .agora-card-foot { display: flex; position: static; opacity: 1; pointer-events: auto; margin-top: 5px; }
+/* Projects read large: a big logo, the name, a description line and a summary
+   of the sub-projects, with the sub-projects lined up under the logo. */
+.agora-timeline-project .agora-timeline-label { gap: 12px; padding: 18px 16px 18px 8px; }
+.agora-timeline-project .agora-logo-tile { width: 88px; height: 44px; padding: 6px; border-radius: 8px; }
+.agora-timeline-project-text { display: grid; flex: 1; gap: 3px; min-width: 0; }
+.agora-timeline-project-text h3 { display: -webkit-box; overflow: hidden; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font: 500 20px/1.2 var(--font-display); }
+.agora-timeline-project-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-timeline-project-text .agora-timeline-subtitle { font: 13px var(--font-body); }
+.agora-timeline-project .agora-timeline-track { min-height: 96px; }
+.agora-timeline-project .agora-timeline-point i { width: 10px; height: 10px; }
+.agora-timeline-project .agora-timeline-month { height: 8px; }
+/* Sub-projects sit one step in with their own logo slot; their subtasks sit
+   a step further, lighter and shorter. */
+.agora-timeline-row[data-depth="1"] .agora-timeline-label { padding-left: 32px; }
+.agora-timeline-row[data-depth="1"] .agora-timeline-item { gap: 12px; padding: 14px 0; }
+.agora-timeline-row[data-depth="1"] .agora-logo-tile { width: 64px; height: 32px; }
+.agora-logo-tile[data-blank] { visibility: hidden; }
+.agora-timeline-row[data-depth="1"] .agora-timeline-title > span { font-size: 15px; }
+.agora-timeline-row[data-depth="1"] .agora-timeline-track { min-height: 76px; }
+.agora-timeline-row[data-depth="1"] .agora-timeline-point i { width: 14px; height: 14px; }
+.agora-timeline-row[data-depth="1"] .agora-timeline-point small { font-size: 11px; }
+.agora-timeline-row[data-depth="1"] .agora-timeline-month { height: 12px; }
+.agora-timeline-row[data-depth="2"] .agora-timeline-label { padding-left: 64px; }
+.agora-timeline-row[data-depth="2"] .agora-timeline-item { padding: 10px 0; }
+.agora-timeline-row[data-depth="2"] .agora-timeline-title > span { font-weight: 400; }
+.agora-timeline-row[data-depth="2"] .agora-timeline-track { min-height: 60px; }
+/* The project's cover is also the button that edits it. */
+.agora-cover-button { flex: none; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
+.agora-cover-button:hover .agora-logo-tile, .agora-cover-button:focus-visible .agora-logo-tile { outline: 2px solid var(--primary); outline-offset: 2px; }
+.agora-cover-menu { display: grid; gap: 10px; width: 320px; padding: 12px; }
+.agora-cover-heading { margin: 0; font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-cover-field { display: grid; gap: 8px; }
+.agora-cover-preview { display: flex; align-items: center; gap: 10px; }
+.agora-cover-preview .agora-logo-tile { width: 96px; height: 48px; }
+.agora-cover-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.agora-cover-field input[type="url"] { min-width: 0; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); font: 12px var(--font-body); }
+.agora-cover-field .agora-check { display: flex; align-items: center; gap: 6px; font: 11px var(--font-body); color: var(--muted-foreground); }
+.agora-cover-error { margin: 0; color: #ef4444; font-size: 12px; }
+.agora-timeline-project-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; margin-top: 2px; }
+.agora-timeline-project-meta small { min-width: 0; }
+.agora-timeline-project-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.agora-timeline-project-name h3 { flex: 0 1 auto; min-width: 0; }
+.agora-view-project { display: inline-flex; flex: none; padding: 2px; border: 0; border-radius: 4px; background: none; color: var(--muted-foreground); }
+.agora-view-project:hover, .agora-view-project:focus-visible { color: var(--foreground); }
+.agora-timeline-project-text .agora-focus-project { text-align: left; }
+/* The Scope menu: projects with their epics indented beneath them. */
+.agora-scope-trigger > span { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agora-scope-menu { max-height: min(60vh, 420px); max-width: 340px; overflow-y: auto; }
+.agora-scope-menu .agora-menu-option { text-decoration: none; }
+.agora-scope-menu .agora-menu-option > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agora-scope-menu .agora-menu-option[aria-current="true"] { background: var(--muted); font-weight: 500; }
+.agora-menu-empty { margin: 0; padding: 8px; color: var(--muted-foreground); font: 11px var(--font-code); }
+.agora-scope-crumb button { padding: 0; border: 0; background: none; color: var(--muted-foreground); font: inherit; cursor: pointer; }
+.agora-scope-crumb button:hover { color: var(--foreground); }
+/* Project pages: a breadcrumb back to every project. */
+.agora-scope-crumb { display: flex; align-items: center; gap: 6px; margin: -8px 0 16px; font-size: 13px; color: var(--muted-foreground); }
+.agora-scope-crumb a { color: var(--muted-foreground); text-decoration: none; }
+.agora-scope-crumb a:hover { color: var(--foreground); }
+.agora-scope-crumb span { color: var(--foreground); }
+/* The project page's header: the project itself, above its cards. */
+.agora-scope-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px; padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+.agora-scope-head > .agora-logo-tile { width: 128px; height: 64px; padding: 8px; border-radius: 8px; }
+.agora-scope-head > .agora-btn { flex: none; }
+.agora-scope-text { display: grid; flex: 1; gap: 6px; min-width: 0; }
+.agora-scope-text h1 { margin: 0; font: 500 26px/1.2 var(--font-display); }
+.agora-scope-text p { margin: 0; max-width: 80ch; color: var(--muted-foreground); font-size: 14px; line-height: 1.5; }
+.agora-scope-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 2px; font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-scope-meta > span { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 640px) { .agora-scope-head { flex-wrap: wrap; } .agora-scope-head > .agora-logo-tile { width: 96px; height: 48px; } }
+/* Projects on the kanban: project cards stay in the Projects view, and every
+   card here names the project it rolls up to. */
+.agora-card-project { display: inline-flex; min-width: 0; max-width: 150px; align-items: center; gap: 4px; color: var(--muted-foreground); font: 10px var(--font-code); text-decoration: none; }
+.agora-card-project span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agora-card-project .agora-logo-tile { width: 22px; height: 12px; padding: 1px; border-radius: 3px; }
+a.agora-card-project:hover { color: var(--foreground); }
+/* The list page: every project card in one table. */
+.agora-project-list > .agora-search { margin: 12px; }
+.agora-project-list-scroll { min-width: 880px; }
+.agora-project-list table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.agora-project-list th { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; font: 11px var(--font-code); letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); }
+.agora-project-list th button { padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+.agora-project-list td { padding: 10px 12px; border-top: 1px solid var(--border); vertical-align: top; }
+.agora-project-list td[data-overdue] { color: #ef4444; }
+.agora-project-list td a { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); }
+.agora-list-card { display: flex; max-width: 440px; align-items: flex-start; gap: 10px; padding: 0; border: 0; background: none; color: var(--foreground); text-align: left; font: inherit; cursor: pointer; }
+.agora-list-card > span:last-child { display: grid; gap: 2px; }
+.agora-list-card small { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--muted-foreground); font-size: 12px; }
+

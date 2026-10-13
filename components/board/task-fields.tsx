@@ -1,4 +1,5 @@
 import { BoardSelect } from "./board-select"
+import { CoverField } from "./cover-field"
 import type { BoardCard, BoardData, CardDraft } from "../../lib/board"
 import { typeLevel, type Workflow } from "../../lib/workflow"
 
@@ -39,6 +40,7 @@ export function TaskFields({ draft, onChange, board, card, workflow, prefix, hid
           {options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
         </select>}
       </div>)}
+      {!hideIdentity && <PlanningFields draft={draft} onChange={onChange} workflow={workflow} prefix={prefix} />}
       <div><label htmlFor={`${prefix}-pr`}>PR URL</label><input id={`${prefix}-pr`} type="url" value={draft.prUrl ?? ""} onChange={(event) => onChange({ ...draft, prUrl: event.target.value || null })} placeholder="https://github.com/owner/repo/pull/1" /></div>
       <div><label htmlFor={`${prefix}-parent`}>Parent card</label>{hideIdentity ? <BoardSelect id={`${prefix}-parent`} value={draft.parentId ?? ""} onValueChange={value => onChange({ ...draft, parentId: value || null })} options={[{value:"",label:"No parent"}, ...parents.map(item => ({value:item.id,label:`${item.title}${item.archived ? " (archived)" : ""}`}))]} /> : <select id={`${prefix}-parent`} value={draft.parentId ?? ""} onChange={(event) => onChange({ ...draft, parentId: event.target.value || null })}>
         <option value="">No parent</option>
@@ -55,4 +57,23 @@ export function TaskFields({ draft, onChange, board, card, workflow, prefix, hid
       <label className="agora-check"><input type="checkbox" checked={draft.automerge ?? false} onChange={(event) => onChange({ ...draft, automerge: event.target.checked })} />Allow automatic merge after review</label>
     </div>
   </details>
+}
+
+/* When the work is due and how it looks on the planning views: a target day
+   (or just a month while the day is open) and, for projects and epics, a
+   cover image to upload, link, or remove. */
+export function PlanningFields({ draft, onChange, workflow, prefix }: { draft: CardDraft; onChange: (draft: CardDraft) => void; workflow: Workflow; prefix: string }) {
+  const level = typeLevel(workflow, draft.type)
+  const monthOnly = draft.dueDate?.length === 7
+  return <>
+    <div><label htmlFor={`${prefix}-due`}>Target date</label>
+      {monthOnly
+        ? <input id={`${prefix}-due`} type="month" value={draft.dueDate ?? ""} onChange={event => onChange({ ...draft, dueDate: event.target.value || null })} />
+        : <input id={`${prefix}-due`} type="date" value={draft.dueDate ?? ""} onChange={event => onChange({ ...draft, dueDate: event.target.value || null })} />}
+      <label className="agora-check"><input type="checkbox" checked={monthOnly} onChange={event => onChange({ ...draft, dueDate: draft.dueDate ? (event.target.checked ? draft.dueDate.slice(0, 7) : `${draft.dueDate.slice(0, 7)}-01`) : null })} disabled={!draft.dueDate} />Day not set yet</label>
+    </div>
+    {(level > 1 || draft.imageUrl) && <div><label htmlFor={`${prefix}-image`}>Cover image</label>
+      <CoverField id={`${prefix}-image`} value={draft.imageUrl} onChange={imageUrl => onChange({ ...draft, imageUrl })} />
+    </div>}
+  </>
 }

@@ -86,9 +86,15 @@ Invalid inputs return 400, cross-origin browser mutations 403, stale revisions
 409, oversized bodies 413, and unavailable database/auth configuration 503.
 
 Drafts may also carry `type`, `assignee`, `effort`, `model`, `harness`, `prUrl`,
-`automerge`, `needsHumanReview`, `parentId` and `dependencies`. Nullable assignment,
-runtime settings, PR URL and parent can be cleared with `null`; dependencies can
-be cleared with `[]`. Omitted optional edit fields preserve existing values.
+`imageUrl`, `dueDate`, `automerge`, `needsHumanReview`, `parentId` and
+`dependencies`. `imageUrl` is a project or epic's cover: an HTTP(S) image URL,
+or an uploaded image the browser has already downscaled and stored inline as a
+PNG, JPEG, WebP or GIF data URL (at most 200,000 characters). End either with
+`#dark` to show a white logo on a black tile.
+`dueDate` is a target day (`YYYY-MM-DD`) or, while the day is not set, a month
+(`YYYY-MM`); the Projects view places cards on its timeline and calendar by it.
+Nullable assignment, runtime settings, PR URL, image, target date and parent can
+be cleared with `null`; dependencies can be cleared with `[]`. Omitted optional edit fields preserve existing values.
 Parent/dependency IDs must exist, cannot refer to the card itself, and each graph
 must be acyclic. Comments are `{ id, body, author, createdAt }`; clients add them
 through the dedicated comments endpoint.

@@ -4,5 +4,5 @@ import { TestDashboard } from "../components/board/test-dashboard"
 
 const root = document.getElementById("agora-dashboard")
 if (root) createRoot(root).render(<ThemeProvider attribute="class" defaultTheme="dark" storageKey="agora-theme" enableSystem disableTransitionOnChange>
-  <TestDashboard homeHref="../../" />
+  <TestDashboard homeHref="../../" projects="query" />
 </ThemeProvider>)

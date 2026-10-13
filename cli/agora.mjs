@@ -139,7 +139,7 @@ export async function http(config, path, method = "GET", body) {
   return data
 }
 const output = (data) => process.stdout.write(JSON.stringify(data, null, 2) + "\n")
-const help = `Agora — HTTP client for a shared board (Node 20.9+)\n\n  agora login --url https://board.example.com [--token-stdin]\n  agora logout\n  agora whoami\n  agora skill install [--force]         # current project .claude/skills/agora\n  agora board [--json]\n  agora get ID\n  agora create --title TEXT [--description TEXT] [--column backlog]\n  agora create --stdin                 # JSON draft on stdin\n  agora edit ID --title TEXT           # or --stdin / --data JSON\n  agora move ID COLUMN [--position N] [--revision N]\n  agora comment ID [--author NAME] < notes.md\n  agora archive ID | restore ID | delete ID\n  agora dispatch ID --idempotency-key UUID [--revision N]\n  agora dispatch-status UUID\n  agora suggest --title TEXT [--description TEXT] [--reason TEXT]\n  agora suggest --stdin                # JSON draft, metadata and relations\n  agora suggestions list [--state pending|accepted|dismissed|all]\n  agora suggestions get UUID\n  agora export [--output backup.json]\n  agora import [backup.json]           # otherwise JSON stdin\n\nBoard mutations accept --revision N; stale revisions are never retried.\nUse AGORA_URL/AGORA_TOKEN for ephemeral credentials or agora login to save them.\n--json emits server JSON. --data accepts a JSON draft; --stdin reads one.\nExit codes: 2 input, 3 authentication, 4 conflict, 5 network/server.\n`
+const help = `Agora — HTTP client for a shared board (Node 20.9+)\n\n  agora login --url https://board.example.com [--token-stdin]\n  agora logout\n  agora whoami\n  agora skill install [--force]         # current project .claude/skills/agora\n  agora board [--json]\n  agora get ID\n  agora create --title TEXT [--description TEXT] [--column backlog]\n  agora create --stdin                 # JSON draft on stdin\n  agora edit ID --title TEXT           # or --stdin / --data JSON\n  agora move ID COLUMN [--position N] [--revision N]\n  agora comment ID [--author NAME] < notes.md   # or --data '{\"body\":\"...\"}'\n  agora archive ID | restore ID | delete ID\n  agora dispatch ID --idempotency-key UUID [--revision N]\n  agora dispatch-status UUID\n  agora suggest --title TEXT [--description TEXT] [--reason TEXT]\n  agora suggest --stdin                # JSON draft, metadata and relations\n  agora suggestions list [--state pending|accepted|dismissed|all]\n  agora suggestions get UUID\n  agora export [--output backup.json]\n  agora import [backup.json]           # otherwise JSON stdin\n\nBoard mutations accept --revision N; stale revisions are never retried.\nUse AGORA_URL/AGORA_TOKEN for ephemeral credentials or agora login to save them.\n--json emits server JSON. --data accepts a JSON draft; --stdin reads one.\nExit codes: 2 input, 3 authentication, 4 conflict, 5 network/server.\n`
 function integer(value, label) {
   if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(Number(value))) throw new CliError(`${label} must be a nonnegative integer.`, 2)
   return Number(value)
@@ -228,8 +228,15 @@ export async function main(args = process.argv.slice(2)) {
       const principal = await http(config, "/api/auth/session")
       if (flags.author !== principal.name) throw new CliError("--author must match the authenticated token name; comments cannot impersonate another author.", 2)
     }
-    const body = await stdinText()
-    if (!body.trim()) throw new CliError("Provide comment text on stdin.", 2)
+    // The body comes from stdin, or from --data '{"body":"..."}' (the form Athena's agent prompt uses).
+    let body
+    if (flags.data !== undefined) {
+      let parsed
+      try { parsed = JSON.parse(flags.data) } catch { throw new CliError("Expected --data to be a JSON object with a body.", 2) }
+      if (!parsed || typeof parsed !== "object" || typeof parsed.body !== "string") throw new CliError("Expected --data to be a JSON object with a body.", 2)
+      body = parsed.body
+    } else body = await stdinText()
+    if (!body.trim()) throw new CliError("Provide comment text on stdin or with --data.", 2)
     output(await http(config, `/api/cards/${encodeURIComponent(id)}/comments`, "POST", { body, revision })); return
   }
   if (command === "import") {

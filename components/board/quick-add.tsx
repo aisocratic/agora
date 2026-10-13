@@ -3,7 +3,9 @@
 import { useRef, useState } from "react"
 import { Plus } from "lucide-react"
 
-export function QuickAdd({ label = "Add task", onAdd }: { label?: string; onAdd: (title: string) => Promise<void> }) {
+/* name is the accessible name when the visible label alone would be ambiguous,
+   such as one "Add card" per column; it should start with the label. */
+export function QuickAdd({ label = "Add task", name = label, onAdd }: { label?: string; name?: string; onAdd: (title: string) => Promise<void> }) {
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState("")
   const [error, setError] = useState("")
@@ -20,10 +22,10 @@ export function QuickAdd({ label = "Add task", onAdd }: { label?: string; onAdd:
     finally { submitting.current = false; setBusy(false) }
   }
   return <div className="agora-quick-add">
-    {adding ? <input autoFocus aria-label={label} placeholder="What needs doing?" maxLength={200} value={title} disabled={busy} onChange={event => setTitle(event.target.value)} onBlur={() => void submit()} onKeyDown={event => {
+    {adding ? <input autoFocus aria-label={name} placeholder="What needs doing?" maxLength={200} value={title} disabled={busy} onChange={event => setTitle(event.target.value)} onBlur={() => void submit()} onKeyDown={event => {
       if (event.key === "Enter") { event.preventDefault(); void submit() }
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setTitle(""); setAdding(false) }
-    }} /> : <button type="button" onClick={() => setAdding(true)}><Plus size={14} />{label}</button>}
+    }} /> : <button type="button" aria-label={name === label ? undefined : name} onClick={() => setAdding(true)}><Plus size={14} />{label}</button>}
     {error && <p role="alert">{error}</p>}
   </div>
 }

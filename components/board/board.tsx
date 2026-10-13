@@ -23,7 +23,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Archive, ArrowDown, ArrowUp, Download, GripVertical, Plus, Upload, X, GitMerge, UserCheck, Link2, LayoutGrid, Target, Search, ChevronRight, Pencil, Eye, Rows3, Layers, SlidersHorizontal, MoreHorizontal, ChevronsDownUp, ChevronsUpDown, MessageSquare, GitPullRequest } from "lucide-react"
+import { Archive, ArrowDown, ArrowUp, CalendarDays, Download, FolderKanban, GripVertical, List, Plus, Upload, X, GitMerge, UserCheck, Link2, LayoutGrid, Target, Search, ChevronDown, ChevronRight, ChevronUp, Pencil, Eye, Rows3, Layers, SlidersHorizontal, MoreHorizontal, MessageSquare, GitPullRequest } from "lucide-react"
 import {
   EMPTY_BOARD,
   isColumn,
@@ -36,22 +36,25 @@ import {
 } from "../../lib/board"
 import { RemoteBoardStore } from "../../lib/remote-board-store"
 import { BoardStore, browserStorage, type BoardController } from "../../lib/board-storage"
-import { DEFAULT_WORKFLOW, TYPE_LEVELS, typeLevel, type Workflow } from "../../lib/workflow"
+import { DEFAULT_WORKFLOW, typeLevel, type Workflow } from "../../lib/workflow"
 import { WorkspaceEditor } from "./workspace-editor"
 import { QuickAdd } from "./quick-add"
 import { PriorityStar } from "./priority-star"
 import { BulkActions, type BulkCommand } from "./bulk-actions"
 import { BoardSelect } from "./board-select"
 import { TaskFields } from "./task-fields"
-import { BoardMenu, CheckMenu, useBoardPreferences } from "./view-controls"
+import { AddCardMenu, AssigneeMenu, BoardMenu, CheckMenu, ScopeMenu, useBoardPreferences, type ScopeOption } from "./view-controls"
 import { ProjectView } from "./project-view"
-import { SORT_OPTIONS, sortCards, type ColumnSort } from "../../lib/board-view"
+import { SORT_OPTIONS, dueLabel, findScope, projectGroups, slugify, sortCards, withinScope, type ColumnSort } from "../../lib/board-view"
+import { LogoTile } from "./cover-field"
 import "./board.css"
 
 const SelectionContext = createContext<{ enabled: boolean; selected: Set<string>; toggle: (id: string) => void }>({ enabled: false, selected: new Set(), toggle: () => {} })
 
 const DisplayContext = createContext({ description: true, metadata: true, compact: false, priority: true, type: true, assignee: true })
 
+/* Which project each card rolls up to, so the kanban can show it. */
+const ProjectContext = createContext<{ projectOf: (id: string) => BoardCard | undefined; href?: (project: BoardCard) => string; hideChips: boolean }>({ projectOf: () => undefined, hideChips: true })
 const WorkflowContext = createContext({ workflow: DEFAULT_WORKFLOW, columns: DEFAULT_WORKFLOW.columns.map(({ id, label }) => ({ id, label })) })
 
 let lastDragEndAt = 0
@@ -148,7 +151,7 @@ function CardEditor({
     description: card?.description ?? "",
     column: card?.column ?? column,
     priority: card?.priority, type: card?.type, assignee: card?.assignee, effort: card?.effort, model: card?.model, harness: card?.harness,
-    prUrl: card?.prUrl, automerge: card?.automerge, needsHumanReview: card?.needsHumanReview,
+    prUrl: card?.prUrl, imageUrl: card?.imageUrl, dueDate: card?.dueDate, automerge: card?.automerge, needsHumanReview: card?.needsHumanReview,
     parentId: card?.parentId, dependencies: card?.dependencies,
   })
   const [comment, setComment] = useState("")
@@ -276,6 +279,8 @@ function SortableCard({
   const { columns, workflow } = useContext(WorkflowContext)
   const display = useContext(DisplayContext)
   const selection = useContext(SelectionContext)
+  const projects = useContext(ProjectContext)
+  const project = projects.projectOf(card.id)
   const [renaming, setRenaming] = useState(false)
   const [title, setTitle] = useState(card.title)
   const finishRename = () => {
@@ -356,7 +361,14 @@ function SortableCard({
       </div>
       {display.description && card.description && <p className="agora-card-description">{card.description}</p>}
       {display.metadata && <div className="agora-card-meta">
-        {display.type && (childCount > 0 && onToggleChildren ? <button className="agora-badge agora-epic-badge" data-tone={card.type ?? "task"} aria-label={`Toggle subtasks of ${card.title}`} aria-expanded={expanded} onClick={onToggleChildren}>{workflow.types.find(type => type.id === card.type)?.label ?? card.type ?? "Task"} ({childCount})<ChevronRight size={12} style={{ transform: expanded ? "rotate(90deg)" : undefined }} /></button> : <span className="agora-badge" data-tone={card.type ?? "task"}>{workflow.types.find(type => type.id === card.type)?.label ?? card.type ?? "Task"}</span>)}
+        {display.type && <span className="agora-badge" data-tone={card.type ?? "task"}>{workflow.types.find(type => type.id === card.type)?.label ?? card.type ?? "Task"}</span>}
+        {childCount > 0 && onToggleChildren && <button className="agora-children-count" aria-label={`Toggle subtasks of ${card.title}`} aria-expanded={expanded} title={`${childCount} ${childCount === 1 ? "card" : "cards"} inside`} onClick={onToggleChildren}>{childCount}{expanded ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />}</button>}
+        {project && project.id !== card.id && !projects.hideChips && (() => {
+          const chip = <>{project.imageUrl ? <LogoTile src={project.imageUrl} /> : <FolderKanban size={11} aria-hidden="true" />}<span>{project.title}</span></>
+          return projects.href
+            ? <a className="agora-card-project" href={projects.href(project)} title={`Project: ${project.title}`}>{chip}</a>
+            : <span className="agora-card-project" title={`Project: ${project.title}`}>{chip}</span>
+        })()}
         {!!card.dependencies?.length && <span title="Dependencies"><Link2 size={12} />{card.dependencies.length}</span>}
         {selection.enabled && !!card.comments?.length && <span title={`${card.comments.length} comments`}><MessageSquare size={12} />{card.comments.length}</span>}
         {card.model && <span className="agora-model" title={`Model: ${card.model}`}>{card.model}</span>}
@@ -364,7 +376,9 @@ function SortableCard({
         <span className="agora-card-flags">
           <button className="agora-flag" data-active={card.needsHumanReview} aria-label={`Toggle human review for ${card.title}`} aria-pressed={!!card.needsHumanReview} onClick={() => onAction({ type: "edit", id: card.id, draft: { ...card, needsHumanReview: !card.needsHumanReview } })}><UserCheck size={13} /></button>
           <button className="agora-flag" data-active={card.automerge} aria-label={`Toggle automatic merge for ${card.title}`} aria-pressed={!!card.automerge} onClick={() => onAction({ type: "edit", id: card.id, draft: { ...card, automerge: !card.automerge } })}><GitMerge size={13} /></button>
-          {display.assignee && card.assignee && <span className="agora-avatar" title={workflow.people.find(person => person.id === card.assignee)?.label ?? card.assignee}>{card.assignee.slice(0, 2).toUpperCase()}</span>}
+          {display.assignee && (selection.enabled
+            ? <AssigneeMenu people={workflow.people} value={card.assignee} cardTitle={card.title} onChange={assignee => onAction({ type: "edit", id: card.id, draft: { ...card, assignee } })} />
+            : card.assignee && <span className="agora-avatar" title={workflow.people.find(person => person.id === card.assignee)?.label ?? card.assignee}>{card.assignee.slice(0, 2).toUpperCase()}</span>)}
         </span>
       </div>}
       {showActions && <div className="agora-card-foot">
@@ -500,7 +514,7 @@ function Column({
       <SortableContext items={rows.map(({ card }) => card.id)} strategy={verticalListSortingStrategy}>
         <div className="agora-cards">
           {rows.map(({ card, depth, compact }, rowIndex) => (
-            <div key={card.id} className={depth ? "agora-nested-card" : undefined} style={depth ? { marginLeft: Math.min(depth, 3) * 12 } : undefined}>
+            <div key={card.id} className={depth ? "agora-nested-card" : undefined} style={depth ? { marginLeft: Math.min(depth, 3) * 10 } : undefined}>
               {workspace && rowIndex === firstCompact && <div className="agora-compact-divider"><span />{roots.length - Math.min(roots.length, fullLimit)} cards (<button onClick={() => setFullSizeOverride(fullCardLimit)}>show full size</button>)<span /></div>}
               <SortableCard
                 compact={compact}
@@ -517,12 +531,10 @@ function Column({
               {!workspace && childrenOf(card.id).length > 0 && <button className="agora-children-toggle" aria-expanded={!collapsed.has(card.id)} onClick={() => toggleCollapsed(card.id)}><ChevronRight size={12} style={{ transform: collapsed.has(card.id) ? undefined : "rotate(90deg)" }} />{childrenOf(card.id).length} subtasks</button>}
             </div>
           ))}
+          {cards.length === 0 && <div className="agora-empty">No cards yet. Add one or drop it here.</div>}
+          {workspace && onQuickAdd && <QuickAdd label="Add card" name={`Add card at the end of ${label}`} onAdd={onQuickAdd} />}
         </div>
       </SortableContext>
-      {cards.length === 0 && (
-        <div className="agora-empty">No cards yet. Add one or drop it here.</div>
-      )}
-      {workspace && onQuickAdd && <QuickAdd onAdd={onQuickAdd} />}
     </section>
   )
 }
@@ -532,21 +544,41 @@ function EdgeDestination({ id, label }: { id: string; label: string }) {
   return <div ref={setNodeRef} className="agora-edge-destination" data-destination={id} data-over={isOver}><strong>{label}</strong><span>Drop to move</span></div>
 }
 
-type Editor = { card?: BoardCard; column: ColumnId; revision?: number; newId?: string }
-export function Board({ store: providedStore, mode = "local", workflow: providedWorkflow = DEFAULT_WORKFLOW, workspace = false, workspaceNav, workspaceActions, preferencesKey }: { workspaceNav?: ReactNode; workspaceActions?: ReactNode; store?: BoardController; mode?: "local" | "shared"; workflow?: Workflow; workspace?: boolean; preferencesKey?: string }) {
+type Editor = { card?: BoardCard; column: ColumnId; revision?: number; newId?: string; cardType?: string; parentId?: string | null }
+/* scopeSlug comes from a /project/<slug> URL: the board then shows only that
+   project's (or sub-project's) cards. projectHref builds those URLs, so the
+   Projects view can link to them; without it there are no project pages. */
+/* page and pageHref put the workspace's sections at their own URLs (/board,
+   /projects, /calendar, /list); without pageHref the tabs switch in place. */
+export type WorkspacePage = "board" | "projects" | "calendar" | "list"
+type BoardView = "board" | "project" | "calendar" | "list" | "graph"
+const PAGE_VIEWS: Record<WorkspacePage, BoardView> = { board: "board", projects: "project", calendar: "calendar", list: "list" }
+const PROJECT_MODES = { project: "timeline", calendar: "calendar", list: "list" } as const
+const TABS = [
+  { page: "board", view: "board", label: "Board", Icon: LayoutGrid },
+  { page: "projects", view: "project", label: "Projects", Icon: Target },
+  { page: "calendar", view: "calendar", label: "Calendar", Icon: CalendarDays },
+  { page: "list", view: "list", label: "List", Icon: List },
+] as const
+export function Board({ store: providedStore, mode = "local", workflow: providedWorkflow = DEFAULT_WORKFLOW, workspace = false, workspaceNav, workspaceActions, preferencesKey, scopeSlug, projectHref, projectsHref = "/", page, pageHref, scopeHref }: { workspaceNav?: ReactNode; workspaceActions?: ReactNode; store?: BoardController; mode?: "local" | "shared"; workflow?: Workflow; workspace?: boolean; preferencesKey?: string; scopeSlug?: string; projectHref?: (slug: string) => string; projectsHref?: string; page?: WorkspacePage; pageHref?: (page: WorkspacePage) => string; scopeHref?: (slug?: string) => string }) {
   const [store] = useState<BoardController>(() => providedStore ?? (mode === "shared" ? new RemoteBoardStore() : makeStore()))
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot)
   useEffect(() => store.connect(), [store])
   const [editor, setEditor] = useState<Editor | null>(null)
-  /* Scope and collapsed hold card IDs, so each board needs its own key. */
+  /* Collapsed holds card IDs, so each board needs its own key. */
   const [preferences, setPreferences] = useBoardPreferences(preferencesKey ?? (workspace ? "agora.test-dashboard.view.v2" : "agora.board.view.v1"))
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
-  const [legacyView, setLegacyView] = useState<"board" | "project" | "graph">("board")
-  const view = workspace ? preferences.view : legacyView
-  const setView = (view: "board" | "project" | "graph") => {
+  const [legacyView, setLegacyView] = useState<BoardView>("board")
+  // Without URLs, a project page opens on its kanban and keeps its own view,
+  // so visiting one never changes which view the main board remembers.
+  const [scopedView, setScopedView] = useState<BoardView>("board")
+  // With URLs, the page picks the view; only the graph opens in place.
+  const [graphOpen, setGraphOpen] = useState(false)
+  const view: BoardView = pageHref ? (graphOpen ? "graph" : PAGE_VIEWS[page ?? "board"]) : scopeSlug ? scopedView : workspace ? preferences.view : legacyView
+  const setView = (view: BoardView) => {
     setSelectedIds(new Set())
-    if (workspace) setPreferences({ view }); else setLegacyView(view)
+    if (pageHref) setGraphOpen(view === "graph"); else if (scopeSlug) setScopedView(view); else if (workspace) setPreferences({ view }); else setLegacyView(view)
   }
   useEffect(() => {
     if (!workspace || !selectedIds.size || editor) return
@@ -572,25 +604,84 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
   const { board, ready, error, readOnly, unsaved, pending } = snapshot
+  /* A card can be picked from elsewhere (a timeline marker, or ?card=<id> in
+     the URL): it is selected, scrolled to, and shown even if a filter or a
+     folded parent would hide it, for as long as it stays selected. */
+  const [focusId, setFocusId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!workspace || !ready) return
+    const query = new URLSearchParams(window.location.search)
+    const id = query.get("card")
+    if (!id) return
+    query.delete("card")
+    window.history.replaceState(null, "", `${window.location.pathname}${query.size ? `?${query}` : ""}${window.location.hash}`)
+    // The URL is only readable in the browser, after the server's first render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFocusId(id)
+    setSelectedIds(new Set([id]))
+  }, [workspace, ready])
+  useEffect(() => {
+    if (!focusId || !ready || view !== "board") return
+    const card = Array.from(document.querySelectorAll<HTMLElement>("[data-card-id]")).find(element => element.dataset.cardId === focusId)
+    card?.scrollIntoView({ block: "center", inline: "center" })
+  }, [focusId, ready, view])
+  const focusCard = focusId && selectedIds.has(focusId) ? board.cards.find(card => card.id === focusId && !card.archived) : undefined
+  const focusAncestors = new Set<string>()
+  for (let parent = focusCard?.parentId; parent && !focusAncestors.has(parent); parent = board.cards.find(card => card.id === parent)?.parentId) focusAncestors.add(parent)
   const workflow = snapshot.workflow ?? providedWorkflow
   const columns = [...workflow.columns.map(({ id, label }) => ({ id, label })), ...[...new Set(board.cards.map((card) => card.column))].filter((id) => !workflow.columns.some((column) => column.id === id)).map((id) => ({ id, label: `${id} (unconfigured)` }))]
-  const visibleTypes = preferences.types ?? workflow.types.map(type => type.id)
-  const visibleColumnIds = preferences.columns ?? workflow.columns.filter(column => ["todo", "doing", "review"].includes(column.role)).map(column => column.id)
+  /* In the workspace, projects live in the Projects view: they are not a type
+     to filter by and their cards stay out of the kanban columns, while the
+     epics and tasks under them stay on the board. */
+  const isProject = (card: BoardCard) => workspace && workflow.types.find(type => type.id === card.type)?.kind === "project"
+  const filterTypes = workspace ? workflow.types.filter(type => type.kind !== "project") : workflow.types
+  const chosenTypes = (preferences.types ?? filterTypes.map(type => type.id)).filter(id => filterTypes.some(type => type.id === id))
+  const visibleTypes = focusCard && !chosenTypes.includes(focusCard.type ?? "task") ? [...chosenTypes, focusCard.type ?? "task"] : chosenTypes
+  const chosenColumnIds = preferences.columns ?? workflow.columns.filter(column => ["todo", "doing", "review"].includes(column.role)).map(column => column.id)
+  const visibleColumnIds = focusCard && !chosenColumnIds.includes(focusCard.column) ? [...chosenColumnIds, focusCard.column] : chosenColumnIds
   const shownColumns = columns.filter(column => workspace ? visibleColumnIds.includes(column.id) : !columnFilter || column.id === columnFilter)
-  const epicIds = board.cards.filter(card => !card.archived && board.cards.some(child => !child.archived && child.parentId === card.id)).map(card => card.id)
-  const allCollapsed = epicIds.length > 0 && epicIds.every(id => preferences.collapsed.includes(id))
-  const inScope = (card: BoardCard): boolean => {
-    if (!workspace || !preferences.scope) return true
-    let current: BoardCard | undefined = card
-    const visited = new Set<string>()
-    while (current && !visited.has(current.id)) {
-      if (current.id === preferences.scope) return true
-      visited.add(current.id)
-      current = board.cards.find(parent => parent.id === current?.parentId)
+  // Scope comes from the page's URL; without URLs the Scope menu sets it in place.
+  const [localScope, setLocalScope] = useState<string | null>(null)
+  const scope = !workspace ? undefined
+    : scopeSlug ? findScope(board.cards, workflow, scopeSlug)
+    : localScope ? board.cards.find(card => card.id === localScope && !card.archived) : undefined
+  /* What the Scope menu offers: open projects, each with its open epics
+     indented beneath it, then epics with no open project. Archived cards and
+     anything in a done column (done, won't do) are left out. */
+  const scopeOptions: ScopeOption[] = (() => {
+    if (!workspace) return []
+    const kindOf = (card: BoardCard) => workflow.types.find(type => type.id === card.type)?.kind ?? "task"
+    const open = board.cards.filter(card => !card.archived && kindOf(card) !== "task" && workflow.columns.find(column => column.id === card.column)?.role !== "done")
+    // A title shared by two cards cannot be told apart by slug, so those use their IDs.
+    const slugOf = (card: BoardCard) => open.filter(other => slugify(other.title) === slugify(card.title)).length > 1 ? card.id : slugify(card.title)
+    const option = (card: BoardCard, depth: number): ScopeOption => ({ id: card.id, label: card.title, depth, kind: kindOf(card) === "project" ? "project" : "epic", href: scopeHref?.(slugOf(card)) })
+    const projects = open.filter(card => kindOf(card) === "project")
+    const epics = open.filter(card => kindOf(card) === "epic")
+    const cardProjectId = (card: BoardCard) => {
+      const seen = new Set<string>()
+      for (let current = board.cards.find(item => item.id === card.parentId); current && !seen.has(current.id); current = board.cards.find(item => item.id === current!.parentId)) {
+        if (kindOf(current) === "project") return current.id
+        seen.add(current.id)
+      }
+      return undefined
     }
-    return false
+    const placed = new Set<string>()
+    const tree = projects.flatMap(project => {
+      const children = epics.filter(epic => cardProjectId(epic) === project.id)
+      children.forEach(child => placed.add(child.id))
+      return [option(project, 0), ...children.map(child => option(child, 1))]
+    })
+    return [...tree, ...epics.filter(epic => !placed.has(epic.id)).map(epic => option(epic, 0))]
+  })()
+  const cardProjects = new Map<string, BoardCard>()
+  if (workspace) for (const group of projectGroups(board.cards, workflow).groups) {
+    cardProjects.set(group.project.id, group.project)
+    for (const card of group.cards) cardProjects.set(card.id, group.project)
   }
-  const visibleCards = board.cards.filter(card => !card.archived && inScope(card) && (workspace ? visibleTypes.includes(card.type ?? "task") : (!typeFilter || (card.type ?? "task") === typeFilter) && (!columnFilter || card.column === columnFilter)) && `${card.title} ${card.description} ${card.assignee ?? ""}`.toLowerCase().includes(search.toLowerCase()))
+  const inScope = (card: BoardCard) => !scope || withinScope(board.cards, card, scope.id)
+  /* New cards on a project page land in that project when the type allows it. */
+  const scopedParent = (type: string) => scope && typeLevel(workflow, type) < typeLevel(workflow, scope.type) ? scope.id : null
+  const visibleCards = board.cards.filter(card => !card.archived && inScope(card) && (workspace ? isProject(card) || visibleTypes.includes(card.type ?? "task") : (!typeFilter || (card.type ?? "task") === typeFilter) && (!columnFilter || card.column === columnFilter)) && `${card.title} ${card.description} ${card.assignee ?? ""}`.toLowerCase().includes(search.toLowerCase()))
   if (sort === "priority") visibleCards.sort((a, b) => (b.priority ?? 1) - (a.priority ?? 1))
   if (sort === "newest") visibleCards.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const initialColumn = workflow.columns.find((column) => column.role === (workspace ? "todo" : "backlog"))?.id ?? workflow.columns[0].id
@@ -662,7 +753,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
     else setMessage("That accepted card is no longer on the board. Its suggestion history is retained.")
   }} /> : null
   return (
-    <WorkflowContext.Provider value={{ workflow, columns }}><SelectionContext.Provider value={{ enabled: workspace, selected: selectedIds, toggle: id => setSelectedIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next }) }}><DisplayContext.Provider value={workspace ? { description: preferences.properties.includes("description"), metadata: preferences.properties.includes("metadata"), compact: preferences.fullCardLimit === 0, priority: preferences.properties.includes("priority"), type: preferences.properties.includes("type"), assignee: preferences.properties.includes("assignee") } : { description, metadata, compact, priority: true, type: true, assignee: true }}><div className={`agora-board${workspace ? " agora-workspace" : ""}`} aria-label="Agora board">
+    <WorkflowContext.Provider value={{ workflow, columns }}><SelectionContext.Provider value={{ enabled: workspace, selected: selectedIds, toggle: id => setSelectedIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next }) }}><ProjectContext.Provider value={{ projectOf: id => cardProjects.get(id), href: projectHref ? project => projectHref(slugify(project.title)) : undefined, hideChips: !!scope }}><DisplayContext.Provider value={workspace ? { description: preferences.properties.includes("description"), metadata: preferences.properties.includes("metadata"), compact: preferences.fullCardLimit === 0, priority: preferences.properties.includes("priority"), type: preferences.properties.includes("type"), assignee: preferences.properties.includes("assignee") } : { description, metadata, compact, priority: true, type: true, assignee: true }}><div className={`agora-board${workspace ? " agora-workspace" : ""}`} aria-label="Agora board">
       {!workspace && <div className="agora-toolbar">
         <div>
           <h2>Your board</h2>
@@ -784,20 +875,20 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
       {ready && !readOnly && workspace && <div className="agora-controls agora-workspace-controls">
         {workspaceNav}
         <div className="agora-view-switch" role="group" aria-label="Workspace sections">
-          <button className="agora-btn" aria-pressed={view === "board"} onClick={() => setView("board")}><LayoutGrid size={14} />Cards</button>
-          <button className="agora-btn" aria-pressed={view === "project"} onClick={() => setView("project")}><Target size={14} />Projects</button>
+          {TABS.map(({ page: tab, view: tabView, label, Icon }) => pageHref
+            ? <a key={tab} className="agora-btn" href={pageHref(tab)} aria-current={view === tabView ? "page" : undefined}><Icon size={14} />{label}</a>
+            : <button key={tab} className="agora-btn" aria-pressed={view === tabView} onClick={() => setView(tabView)}><Icon size={14} />{label}</button>)}
         </div>
-        <button className="agora-btn agora-new-task" disabled={pending} onClick={() => setEditor({ column: initialColumn, revision: snapshot.revision, newId: crypto.randomUUID() })}><Plus size={14} />New task</button>
-        {view === "board" && board.cards.some(card => card.parentId && !card.archived) && <button className="agora-btn" onClick={() => setPreferences({ collapsed: allCollapsed ? [] : epicIds })}>{allCollapsed ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />}{allCollapsed ? "Expand all" : "Collapse all"}</button>}
+        <AddCardMenu workflow={workflow} disabled={pending} onAdd={type => setEditor({ column: initialColumn, revision: snapshot.revision, newId: crypto.randomUUID(), cardType: type, parentId: scopedParent(type) })} />
         <div className="agora-controls-right">
           {suggestionsInbox}
-          <BoardMenu label={preferences.scope ? "Scoped" : "Scope"} icon={<Target size={14} />}><label className="agora-menu-field">Project or epic<BoardSelect aria-label="Scope to project or epic" value={preferences.scope ?? ""} onValueChange={value => setPreferences({ scope: value || null, collapsed: [] })} options={[{ value: "", label: "All work" }, ...board.cards.filter(card => !card.archived && typeLevel(workflow, card.type) > TYPE_LEVELS.task).map(card => ({ value: card.id, label: card.title }))]} /></label></BoardMenu>
+          <ScopeMenu options={scopeOptions} current={scope?.id} allHref={scopeHref?.()} onPick={id => { setLocalScope(id); setSelectedIds(new Set()) }} />
           <CheckMenu label={`${preferences.properties.length}/5 properties`} icon={<Eye size={14} />} options={[{id:"description",label:"Description"},{id:"priority",label:"Priority"},{id:"metadata",label:"Info bar"},{id:"type",label:"Type"},{id:"assignee",label:"Assignee"}]} selected={preferences.properties} onChange={properties => setPreferences({ properties: properties as typeof preferences.properties })} />
           <BoardMenu label={preferences.fullCardLimit < 0 ? "All full size" : `Full cards: ${preferences.fullCardLimit}`} icon={<Rows3 size={14} />}>
             {[5,10,15,-1].map(limit => <button className="agora-menu-option" aria-pressed={preferences.fullCardLimit === limit} key={limit} onClick={() => setPreferences({ fullCardLimit: limit })}>{limit < 0 ? "All cards" : `First ${limit} cards`}</button>)}
           </BoardMenu>
-          <CheckMenu label={visibleTypes.length === workflow.types.length ? "All types" : `${visibleTypes.length} types`} icon={<Layers size={14} />} options={workflow.types} selected={visibleTypes} onChange={types => setPreferences({ types })} />
-          <CheckMenu label={visibleColumnIds.length === columns.length ? "All columns" : `${visibleColumnIds.length} of ${columns.length} columns`} icon={<SlidersHorizontal size={14} />} options={columns} selected={visibleColumnIds} onChange={columns => setPreferences({ columns })} />
+          <CheckMenu label={chosenTypes.length === filterTypes.length ? "All types" : `${chosenTypes.length} types`} icon={<Layers size={14} />} options={filterTypes} selected={chosenTypes} onChange={types => setPreferences({ types })} />
+          <CheckMenu label={chosenColumnIds.length === columns.length ? "All columns" : `${chosenColumnIds.length} of ${columns.length} columns`} icon={<SlidersHorizontal size={14} />} options={columns} selected={chosenColumnIds} onChange={columns => setPreferences({ columns })} />
           <BoardMenu label={<span className="agora-sr-only">Board actions</span>} icon={<MoreHorizontal size={16} />}>
             <button className="agora-menu-option" onClick={() => setArchiveOpen(!archiveOpen)}><Archive size={14} />Archive ({archived.length})</button>
             <label className="agora-menu-field">Search cards<input aria-label="Search test cards" placeholder="Title, details, assignee…" value={search} onChange={event => setSearch(event.target.value)} /></label>
@@ -808,7 +899,48 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
         </div>
         {workspaceActions}
       </div>}
-      {ready && !readOnly && view === "project" && <ProjectView cards={visibleCards} workflow={workflow} onOpen={card => setEditor({ card, column: card.column, revision: snapshot.revision })} />}
+      {ready && workspace && (scopeSlug || scope) && <nav className="agora-scope-crumb" aria-label="Project">
+        {scopeSlug ? <a href={projectsHref}>All projects</a> : <button onClick={() => setLocalScope(null)}>All projects</button>}<ChevronRight size={14} aria-hidden="true" />
+        {scope ? <span>{scope.title}</span> : <span role="alert">No project matches “{(() => { try { return decodeURIComponent(scopeSlug ?? "") } catch { return scopeSlug } })()}”. Showing all work.</span>}
+      </nav>}
+      {/* A project page opens with the project itself: its cover, name and where
+          it stands, so it is plain whose cards these are. */}
+      {ready && workspace && scope && (() => {
+        const inside = board.cards.filter(card => !card.archived && card.id !== scope.id && withinScope(board.cards, card, scope.id))
+        const subProjects = inside.filter(card => typeLevel(workflow, card.type) > 1).length
+        const tasks = inside.length - subProjects
+        const type = workflow.types.find(item => item.id === scope.type)?.label ?? "Project"
+        const owner = workflow.people.find(person => person.id === scope.assignee)?.label ?? scope.assignee
+        const when = dueLabel(scope)
+        return <section className="agora-scope-head" aria-label={`${type}: ${scope.title}`}>
+          <LogoTile src={scope.imageUrl} fallback />
+          <div className="agora-scope-text">
+            <h1>{scope.title}</h1>
+            {scope.description && <p>{scope.description}</p>}
+            <div className="agora-scope-meta">
+              <span className="agora-badge" data-tone={scope.type ?? "project"}>{type}</span>
+              <span className="agora-badge" data-tone={scope.column}>{columns.find(column => column.id === scope.column)?.label ?? scope.column}</span>
+              <span><AssigneeMenu people={workflow.people} value={scope.assignee} cardTitle={scope.title} onChange={assignee => void mutate({ type: "edit", id: scope.id, draft: { ...scope, assignee } })} />{owner ?? "Unassigned"}</span>
+              <span>{when ?? "No target date"}</span>
+              <span>{[
+                subProjects ? `${subProjects} ${subProjects === 1 ? "sub-project" : "sub-projects"}` : null,
+                `${tasks} ${tasks === 1 ? "task" : "tasks"}`,
+              ].filter(Boolean).join(" · ")}</span>
+            </div>
+          </div>
+          <button className="agora-btn" onClick={() => setEditor({ card: scope, column: scope.column, revision: snapshot.revision })}><Pencil size={13} />Edit {type.toLowerCase()}</button>
+        </section>
+      })()}
+      {ready && !readOnly && (view === "project" || view === "calendar" || view === "list") && <ProjectView key={view} marker={{
+        // Projects are not on the board, so their marker opens the project instead.
+        href: pageHref ? card => isProject(card) ? undefined : `${pageHref("board")}${pageHref("board").includes("?") ? "&" : "?"}card=${encodeURIComponent(card.id)}` : undefined,
+        onPick: card => {
+          if (isProject(card)) { setEditor({ card, column: card.column, revision: snapshot.revision }); return }
+          setView("board")
+          setFocusId(card.id)
+          setSelectedIds(new Set([card.id]))
+        },
+      }} mode={PROJECT_MODES[view]} order={preferences.projectOrder} onReorder={projectOrder => setPreferences({ projectOrder })} labelWidth={preferences.projectColumnWidth} onResize={projectColumnWidth => setPreferences({ projectColumnWidth })} span={preferences.timelineSpan} onSpan={timelineSpan => setPreferences({ timelineSpan })} cards={visibleCards} allCards={board.cards} workflow={workflow} columns={workspace ? visibleColumnIds : undefined} projectHref={projectHref ? card => projectHref(slugify(card.title)) : undefined} onOpen={card => setEditor({ card, column: card.column, revision: snapshot.revision })} onUpdate={(card, patch) => void mutate({ type: "edit", id: card.id, draft: { ...card, ...patch } })} />}
       {ready && !readOnly && view === "graph" && <DependencyGraph board={board} workflow={workflow} onOpenCard={card => setEditor({ card, column: card.column, revision: snapshot.revision })} />}
       {ready && !readOnly && view === "board" && (
         <>
@@ -837,15 +969,15 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
                     {...column}
                     workspace={workspace}
                     onQuickAdd={async title => {
-                      await store.dispatch({ type: "create", id: crypto.randomUUID(), draft: { title, description: "", column: column.id, type: "task", priority: 1, parentId: preferences.scope } })
+                      await store.dispatch({ type: "create", id: crypto.randomUUID(), draft: { title, description: "", column: column.id, type: "task", priority: 1, parentId: scopedParent("task") } })
                     }}
                     fullCardLimit={workspace ? preferences.fullCardLimit : -1}
                     sort={workspace ? preferences.sortByColumn[column.id] ?? "priority-desc" : "manual"}
                     onSortChange={sort => setPreferences({ sortByColumn: { ...preferences.sortByColumn, [column.id]: sort } })}
-                    collapsedIds={preferences.collapsed}
+                    collapsedIds={preferences.collapsed.filter(id => !focusAncestors.has(id))}
                     onToggleCollapsed={id => setPreferences({ collapsed: preferences.collapsed.includes(id) ? preferences.collapsed.filter(item => item !== id) : [...preferences.collapsed, id] })}
                     cards={visibleCards.filter(
-                      (card) => card.column === column.id,
+                      (card) => card.column === column.id && !isProject(card),
                     )}
                     onNew={() => setEditor({ column: column.id, revision: snapshot.revision, newId: crypto.randomUUID() })}
                     onEdit={(card) => setEditor({ card, column: card.column, revision: snapshot.revision })}
@@ -864,9 +996,9 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
             </DragOverlay>
           </DndContext>
           {workspace && shownColumns.length === 0 && <p className="agora-empty">No columns selected. Choose columns in the toolbar to show your tasks.</p>}
-          <p className="agora-help">
-            Drag cards to move them. Click a title to rename, or the card to open details.{workspace ? " ⌘ / Ctrl / Shift-click to select cards. Esc clears selection." : " Use the handle for keyboard dragging."}
-          </p>
+          {!workspace && <p className="agora-help">
+            Drag cards to move them. Click a title to rename, or the card to open details. Use the handle for keyboard dragging.
+          </p>}
         </>
       )}
       {archiveOpen && (
@@ -969,6 +1101,6 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
           </div>
         </Modal>
       )}
-    </div></DisplayContext.Provider></SelectionContext.Provider></WorkflowContext.Provider>
+    </div></DisplayContext.Provider></ProjectContext.Provider></SelectionContext.Provider></WorkflowContext.Provider>
   )
 }

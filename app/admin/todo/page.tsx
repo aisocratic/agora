@@ -2,5 +2,5 @@ import { TestDashboard } from "./dashboard"
 
 export const metadata = { title: "Test dashboard · Agora" }
 export default function Page() {
-  return <TestDashboard />
+  return <TestDashboard projects="/admin/todo" page="board" />
 }

@@ -7,15 +7,15 @@ import { Archive, Check, CornerDownRight, X } from "lucide-react"
 import type { BoardCard, BoardData, CardDraft } from "../../lib/board"
 import type { BoardController } from "../../lib/board-storage"
 import type { Workflow } from "../../lib/workflow"
-import { TaskFields } from "./task-fields"
+import { PlanningFields, TaskFields } from "./task-fields"
 import { QuickAdd } from "./quick-add"
 import { PriorityStar } from "./priority-star"
 
-export function WorkspaceEditor({ card, column, newId, board, store, workflow, onClose, onOpenCard }: {
-  card?: BoardCard; column: string; newId?: string; board: BoardData; store: BoardController; workflow: Workflow
+export function WorkspaceEditor({ card, column, newId, cardType = "task", parentId, board, store, workflow, onClose, onOpenCard }: {
+  card?: BoardCard; column: string; newId?: string; cardType?: string; parentId?: string | null; board: BoardData; store: BoardController; workflow: Workflow
   onClose: () => void; onOpenCard: (card: BoardCard) => void
 }) {
-  const [draft, setDraft] = useState<CardDraft>(() => card ? { ...card } : { title: "", description: "", column, type: "task", priority: 1 })
+  const [draft, setDraft] = useState<CardDraft>(() => card ? { ...card } : { title: "", description: "", column, type: cardType, priority: 1, parentId: parentId ?? null })
   const current = useRef(draft)
   const saved = useRef(JSON.stringify(draft))
   const [id] = useState(() => card?.id ?? newId ?? crypto.randomUUID())
@@ -103,9 +103,9 @@ export function WorkspaceEditor({ card, column, newId, board, store, workflow, o
     onClose()
   })
   return <Dialog open onOpenChange={open => { if (!open) void close() }}><DialogContent showCloseButton={false} className="agora-dialog agora-workspace-editor" aria-describedby={undefined}>
-    <DialogTitle className="agora-sr-only">{created ? "Task details" : "New task"}</DialogTitle>
+    <DialogTitle className="agora-sr-only">{created ? `${typeLabel} details` : `New ${typeLabel}`}</DialogTitle>
     <header className="agora-editor-heading">
-      <textarea rows={2} autoFocus aria-label="Title" placeholder="Task title" maxLength={200} value={draft.title} onChange={event => change({ ...draft, title: event.target.value })} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur() } }} />
+      <textarea rows={2} autoFocus aria-label="Title" placeholder={`${typeLabel[0].toUpperCase()}${typeLabel.slice(1)} title`} maxLength={200} value={draft.title} onChange={event => change({ ...draft, title: event.target.value })} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur() } }} />
       <button className="agora-priority" aria-label={`Set priority ${(draft.priority ?? 1) % 3 + 1}`} title="Change priority" onClick={() => change({ ...draft, priority: (draft.priority ?? 1) % 3 + 1 })}><PriorityStar priority={draft.priority} size={16} /></button>
       <button className="agora-icon" aria-label="Close task" onClick={() => void close()}><X size={16} /></button>
     </header>
@@ -114,6 +114,7 @@ export function WorkspaceEditor({ card, column, newId, board, store, workflow, o
       <label>Type<BoardSelect aria-label="Type" value={draft.type ?? "task"} onValueChange={value => change({ ...draft, type: value })} options={workflow.types.map(item => ({value:item.id,label:item.label}))} /></label>
       <label>Assignee<BoardSelect aria-label="Assignee" value={draft.assignee ?? ""} onValueChange={value => change({ ...draft, assignee: value || null })} options={[{value:"",label:"Unassigned"}, ...workflow.people.map(item => ({value:item.id,label:item.label}))]} /></label>
     </div>
+    <div className="agora-editor-planning"><PlanningFields draft={draft} onChange={change} workflow={workflow} prefix={prefix} /></div>
     <label className="agora-sr-only" htmlFor={`${prefix}-description`}>Description</label>
     <textarea className="agora-editor-description" id={`${prefix}-description`} placeholder="Add context, a plan, or acceptance criteria…" maxLength={10000} value={draft.description} onChange={event => change({ ...draft, description: event.target.value })} />
     <TaskFields hideIdentity draft={draft} onChange={change} board={board} card={latest} workflow={workflow} prefix={prefix} />
@@ -152,7 +153,7 @@ export function WorkspaceEditor({ card, column, newId, board, store, workflow, o
       {created && <button className="agora-btn" onClick={() => linked.length ? setConfirmArchive(true) : void archive(false)}><Archive size={13} />Archive {typeLabel}</button>}
       <span role="status" className="agora-editor-save">{created && <>{saveState === "Saved" && <Check size={12} />}{saveState}</>}</span>
       <button className="agora-btn" onClick={() => void close()}>{created ? "Close" : "Cancel"}</button>
-      <button className="agora-btn agora-primary" disabled={!draft.title.trim() || saveState === "Saving…"} onClick={() => void run(async () => { if (!card) onClose() })}>{created ? "Save now" : "Create task"}</button>
+      <button className="agora-btn agora-primary" disabled={!draft.title.trim() || saveState === "Saving…"} onClick={() => void run(async () => { if (!card) onClose() })}>{created ? "Save now" : `Create ${typeLabel}`}</button>
     </footer>
   </DialogContent></Dialog>
 }
