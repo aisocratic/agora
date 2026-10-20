@@ -102,7 +102,7 @@ async function promptToken() {
   try { return (await reader.question("")).trim() }
   finally { reader.close(); process.stderr.write("\n") }
 }
-const booleanFlags = new Set(["json", "stdin", "token-stdin", "help", "force", "all", "mine", "epics"])
+const booleanFlags = new Set(["json", "stdin", "token-stdin", "help", "force", "all", "mine", "epics", "color", "list"])
 const valueFlags = new Set(["url", "token", "title", "description", "column", "data", "revision", "position", "author", "output", "idempotency-key", "reason", "state", "limit", "offset", "assignee", "search"])
 function parseArgs(args) {
   const flags = {}
@@ -139,7 +139,7 @@ export async function http(config, path, method = "GET", body) {
   return data
 }
 const output = (data) => process.stdout.write(JSON.stringify(data, null, 2) + "\n")
-const help = `Agora — HTTP client for a shared board (Node 20.9+)\n\n  agora                                # the board at a glance (same as agora status)\n  agora status [--all] [--mine] [--assignee NAME] [--search TEXT] [--limit N] [--json]\n  agora ls [COLUMN...]                  # e.g. agora ls doing review, agora ls done --limit 10\n  agora login --url https://board.example.com [--token-stdin]\n  agora logout\n  agora whoami\n  agora skill install [--force]         # current project .claude/skills/agora\n  agora board [--json]\n  agora get ID\n  agora create --title TEXT [--description TEXT] [--column backlog]\n  agora create --stdin                 # JSON draft on stdin\n  agora edit ID --title TEXT           # or --stdin / --data JSON\n  agora move ID COLUMN [--position N] [--revision N]\n  agora comment ID [--author NAME] < notes.md   # or --data '{\"body\":\"...\"}'\n  agora archive ID | restore ID | delete ID\n  agora dispatch ID --idempotency-key UUID [--revision N]\n  agora dispatch-status UUID\n  agora suggest --title TEXT [--description TEXT] [--reason TEXT]\n  agora suggest --stdin                # JSON draft, metadata and relations\n  agora suggestions list [--state pending|accepted|dismissed|all]\n  agora suggestions get UUID\n  agora export [--output backup.json]\n  agora import [backup.json]           # otherwise JSON stdin\n\nBoard mutations accept --revision N; stale revisions are never retried.\nUse AGORA_URL/AGORA_TOKEN for ephemeral credentials or agora login to save them.\n--json emits server JSON. --data accepts a JSON draft; --stdin reads one.\nExit codes: 2 input, 3 authentication, 4 conflict, 5 network/server.\n`
+const help = `Agora — HTTP client for a shared board (Node 20.9+)\n\n  agora                                # the board: columns of cards (same as agora status)\n  agora status [--all] [--mine] [--assignee NAME] [--search TEXT] [--limit N] [--list] [--color] [--json]\n  agora ls [COLUMN...]                  # a list, e.g. agora ls doing review, agora ls done --limit 10\n  agora login --url https://board.example.com [--token-stdin]\n  agora logout\n  agora whoami\n  agora skill install [--force]         # current project .claude/skills/agora\n  agora board [--json]\n  agora get ID\n  agora create --title TEXT [--description TEXT] [--column backlog]\n  agora create --stdin                 # JSON draft on stdin\n  agora edit ID --title TEXT           # or --stdin / --data JSON\n  agora move ID COLUMN [--position N] [--revision N]\n  agora comment ID [--author NAME] < notes.md   # or --data '{\"body\":\"...\"}'\n  agora archive ID | restore ID | delete ID\n  agora dispatch ID --idempotency-key UUID [--revision N]\n  agora dispatch-status UUID\n  agora suggest --title TEXT [--description TEXT] [--reason TEXT]\n  agora suggest --stdin                # JSON draft, metadata and relations\n  agora suggestions list [--state pending|accepted|dismissed|all]\n  agora suggestions get UUID\n  agora export [--output backup.json]\n  agora import [backup.json]           # otherwise JSON stdin\n\nBoard mutations accept --revision N; stale revisions are never retried.\nUse AGORA_URL/AGORA_TOKEN for ephemeral credentials or agora login to save them.\n--json emits server JSON. --data accepts a JSON draft; --stdin reads one.\nExit codes: 2 input, 3 authentication, 4 conflict, 5 network/server.\n`
 function integer(value, label) {
   if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(Number(value))) throw new CliError(`${label} must be a nonnegative integer.`, 2)
   return Number(value)
@@ -189,6 +189,13 @@ export function statusGroups(state, { columns, all = false, assignee, search, ep
   // In Progress, Review, Todo, Backlog, then whatever else was asked for, in board order.
   const order = (column) => { const i = ["doing", "review", "todo", "backlog"].indexOf(column.role); return i === -1 ? 10 + workflow.indexOf(column) : i }
   const tags = planTags(state)
+  const byId = new Map(state.board.cards.map((card) => [card.id, card]))
+  // The card's ancestors, outermost first: the breadcrumb the web board prints above a title.
+  const breadcrumb = (card) => {
+    const chain = []
+    for (let parent = byId.get(card.parentId); parent && chain.length < 4; parent = byId.get(parent.parentId)) chain.unshift(clean(parent.title))
+    return chain
+  }
   const needle = search?.toLowerCase()
   return [...wanted].sort((a, b) => order(a) - order(b)).map((column) => {
     const cards = state.board.cards
@@ -196,7 +203,7 @@ export function statusGroups(state, { columns, all = false, assignee, search, ep
       .filter((card) => !assignee || (card.assignee ?? "").toLowerCase() === assignee.toLowerCase())
       .filter((card) => !needle || `${card.title} ${card.description ?? ""} ${card.id}`.toLowerCase().includes(needle))
       .sort((a, b) => (b.priority ?? 2) - (a.priority ?? 2) || String(b.updatedAt).localeCompare(String(a.updatedAt)))
-      .map((card) => ({ id: card.id, title: card.title, priority: card.priority ?? 2, assignee: card.assignee ?? null, type: card.type, prUrl: card.prUrl ?? null, tag: tags.get(card.id) ?? null }))
+      .map((card) => ({ id: card.id, title: card.title, priority: card.priority ?? 2, assignee: card.assignee ?? null, type: card.type, prUrl: card.prUrl ?? null, tag: tags.get(card.id) ?? null, breadcrumb: breadcrumb(card) }))
     return { column: column.id, label: column.label, role: column.role, cards }
   })
 }
@@ -235,6 +242,166 @@ export function renderStatus(state, groups, { width = 100, color = false, limit 
   return lines.join("\n")
 }
 
+// The board as the web shows it: columns side by side, each card a box with its
+// breadcrumb, title, and a footer of id, priority, assignee, PR and plan tag.
+const ANSI = { reset: "\x1b[0m", bold: "\x1b[1m", dim: "\x1b[2m", red: "\x1b[31m", green: "\x1b[32m", amber: "\x1b[33m", blue: "\x1b[34m", magenta: "\x1b[35m", cyan: "\x1b[36m" }
+/** The web board's tones: column pills and plan tags. */
+const COLUMN_TONE = { backlog: "dim", todo: "blue", doing: "amber", review: "magenta", done: "green" }
+const TAG_TONE = { ready: "green", "waiting on a person": "amber", "a person's": "amber", blocked: "red", "ready to merge": "cyan" }
+/** Short forms for a column header's summary, so it fits a column. */
+const TAG_SHORT = { "waiting on a person": "waiting", "a person's": "a person's", blocked: "blocked", ready: "ready", "ready to merge": "to merge" }
+const GUTTER = 2
+const MIN_COLUMN = 30
+const DEFAULT_PER_COLUMN = 8
+
+/** Display width of plain text: code points (wide glyphs are rare in card titles). */
+const textWidth = (text) => [...text].length
+const fit = (text, width) => {
+  const chars = [...text]
+  return chars.length > width ? `${chars.slice(0, Math.max(0, width - 1)).join("")}…` : text + " ".repeat(width - chars.length)
+}
+
+/**
+ * Greedy word wrap into at most `lines` lines of `width`, ellipsis on the last when cut.
+ * @param {string} text
+ * @param {number} width
+ * @param {number} [lines]
+ */
+export function wrapText(text, width, lines = 3) {
+  const words = clean(text).split(/\s+/).filter(Boolean)
+  const out = []
+  let line = ""
+  for (let i = 0; i < words.length; i++) {
+    let word = words[i]
+    while (textWidth(word) > width) { // a word longer than the line is cut across lines
+      if (line) { out.push(line); line = "" }
+      out.push([...word].slice(0, width).join(""))
+      word = [...word].slice(width).join("")
+    }
+    const next = line ? `${line} ${word}` : word
+    if (textWidth(next) <= width) { line = next; continue }
+    out.push(line)
+    line = word
+  }
+  if (line) out.push(line)
+  if (out.length <= lines) return out
+  const kept = out.slice(0, lines)
+  const last = [...kept[lines - 1]]
+  kept[lines - 1] = `${last.slice(0, Math.min(last.length, width - 1)).join("")}…`
+  return kept
+}
+
+/**
+ * One card as box lines, each exactly `width` columns wide.
+ * Lines are arrays of [text, tone] segments so color never upsets the padding.
+ */
+function cardLines(card, role, width, paint) {
+  const inner = width - 4
+  const row = (segments) => {
+    const used = segments.reduce((sum, [text]) => sum + textWidth(text), 0)
+    return paint("│ ", "dim") + segments.map(([text, tone]) => paint(text, tone)).join("") + " ".repeat(Math.max(0, inner - used)) + paint(" │", "dim")
+  }
+  const lines = [paint(`╭${"─".repeat(width - 2)}╮`, "dim")]
+  if (card.breadcrumb?.length) lines.push(row([[fit(card.breadcrumb.join(" › "), inner).trimEnd(), "dim"]]))
+  for (const line of wrapText(card.title, inner, 3)) lines.push(row([[line, "bold"]]))
+  // Footer: id, priority stars, assignee, then what the plan says (no tags on In Progress: taken cards read "blocked").
+  const pull = card.prUrl?.match(/\/pull\/(\d+)/)?.[1]
+  const pr = card.prUrl ? (pull ? `#${pull}` : "PR") : null
+  const tag = role === "doing" ? null : card.tag
+  const left = [[card.id.slice(0, 8), "dim"], ["  ", null], [(PRIORITY_MARK[card.priority] ?? "   ").trim() || "-", "amber"], ["  ", null]]
+  const leftWidth = left.reduce((sum, [text]) => sum + textWidth(text), 0)
+  const right = [pr && [pr, "cyan"], tag && [TAG_SHORT[tag] ?? tag, TAG_TONE[tag] ?? null]].filter(Boolean)
+  const rightText = right.map(([text]) => text).join(" ")
+  const assigneeRoom = inner - leftWidth - (rightText ? textWidth(rightText) + 1 : 0)
+  if (assigneeRoom >= 6) {
+    const who = fit(clean(card.assignee ?? "-"), assigneeRoom)
+    const joined = right.flatMap((segment, i) => (i ? [[" ", null], segment] : [segment]))
+    lines.push(row([...left, [rightText ? `${who} ` : who.trimEnd(), null], ...joined]))
+  } else {
+    lines.push(row([...left, [fit(clean(card.assignee ?? "-"), inner - leftWidth).trimEnd(), null]]))
+    if (rightText) lines.push(row(right.flatMap((segment, i) => (i ? [[" ", null], segment] : [segment]))))
+  }
+  lines.push(paint(`╰${"─".repeat(width - 2)}╯`, "dim"))
+  return lines
+}
+
+/** A column's header: the pill (name, count) and a short summary of its plan tags, then a rule. */
+function columnHeader(group, width, paint) {
+  const counts = new Map()
+  for (const card of group.cards) if (card.tag && group.role !== "doing") counts.set(card.tag, (counts.get(card.tag) ?? 0) + 1)
+  const pill = ` ${clean(group.label)} `
+  const count = ` ${group.cards.length}`
+  let summary = [...counts].map(([tag, n]) => `${n} ${TAG_SHORT[tag] ?? tag}`).join(" · ")
+  const room = width - textWidth(pill) - textWidth(count) - 2
+  if (textWidth(summary) > room) summary = room > 1 ? fit(summary, room).trimEnd() : ""
+  const tone = COLUMN_TONE[group.role] ?? null
+  const used = textWidth(pill) + textWidth(count) + (summary ? 2 + textWidth(summary) : 0)
+  return [
+    paint(pill, `pill:${tone ?? ""}`) + paint(count, "dim") + (summary ? paint(`  ${summary}`, "dim") : "") + " ".repeat(Math.max(0, width - used)),
+    paint("─".repeat(width), "dim"),
+  ]
+}
+
+/**
+ * The kanban `agora` prints: columns side by side (stacked when the terminal is too narrow),
+ * cards as boxes. `limit` caps cards per column; without it the cards that fit `height` show.
+ * @param {any} state
+ * @param {any[]} groups
+ * @param {{ width?: number, height?: number, color?: boolean, limit?: number, origin?: string }} [options]
+ */
+export function renderBoard(state, groups, { width = 120, height, color = false, limit, origin = "" } = {}) {
+  const paint = (text, tone) => {
+    if (!color || !tone || !text) return text
+    if (tone.startsWith("pill:")) { const hue = tone.slice(5); return `${ANSI.bold}${hue && hue !== "dim" ? ANSI[hue] : ""}${text}${ANSI.reset}` }
+    return `${ANSI[tone] ?? ""}${text}${ANSI.reset}`
+  }
+  const live = state.board.cards.filter((card) => !card.archived)
+  const head = [origin, `revision ${state.revision}`, `${live.length} cards`].filter(Boolean).join(" · ")
+  const title = paint("Agora", "bold") + paint(` · ${head}`, "dim")
+  if (!groups.length) return `${title}\n`
+  const stacked = groups.length > 1 && (width - GUTTER * (groups.length - 1)) / groups.length < MIN_COLUMN
+  const columnWidth = stacked ? Math.max(MIN_COLUMN, Math.min(width, 100)) : Math.max(MIN_COLUMN, Math.floor((width - GUTTER * (groups.length - 1)) / groups.length))
+  // Lines each column may take: the terminal height (less the title) shared out when stacked.
+  const budget = height ? Math.max(8, Math.floor((height - 2) / (stacked ? groups.length : 1))) : null
+  const columns = groups.map((group) => {
+    const lines = columnHeader(group, columnWidth, paint)
+    let shown = 0
+    for (const card of group.cards) {
+      if (limit !== undefined ? shown >= limit : budget ? false : shown >= DEFAULT_PER_COLUMN) break
+      const box = cardLines(card, group.role, columnWidth, paint)
+      // Leave a line for "+ N more" when more cards follow.
+      if (limit === undefined && budget && lines.length + box.length + (shown + 1 < group.cards.length ? 1 : 0) > budget) break
+      lines.push(...box)
+      shown += 1
+    }
+    if (!group.cards.length) lines.push(paint(fit("  (none)", columnWidth), "dim"))
+    else if (shown < group.cards.length) lines.push(paint(fit(`  + ${group.cards.length - shown} more`, columnWidth), "dim"))
+    return lines
+  })
+  const out = [title, ""]
+  if (stacked) {
+    columns.forEach((lines, i) => { out.push(...lines); if (i < columns.length - 1) out.push("") })
+  } else {
+    const rows = Math.max(...columns.map((lines) => lines.length))
+    const blank = " ".repeat(columnWidth)
+    for (let r = 0; r < rows; r++) out.push(columns.map((lines) => lines[r] ?? blank).join(" ".repeat(GUTTER)).trimEnd())
+  }
+  return `${out.join("\n")}\n`
+}
+
+/**
+ * Color when asked (--color, FORCE_COLOR), never with NO_COLOR, else only on a terminal.
+ * @param {{ color?: unknown }} flags
+ * @param {Record<string, string | undefined>} [env]
+ * @param {boolean} [isTTY]
+ */
+export function wantsColor(flags, env = process.env, isTTY = process.stdout.isTTY) {
+  if (flags.color === true) return true
+  if (env.FORCE_COLOR !== undefined && env.FORCE_COLOR !== "0" && env.FORCE_COLOR !== "false") return true
+  if (env.NO_COLOR !== undefined && env.NO_COLOR !== "") return false
+  return Boolean(isTTY)
+}
+
 export async function main(args = process.argv.slice(2)) {
   const { flags, positionals } = parseArgs(args)
   // Bare `agora` shows the board when one is configured (saved login or AGORA_URL), else the help.
@@ -250,7 +417,7 @@ export async function main(args = process.argv.slice(2)) {
   const limits = { status: 1, ls: 20, login: 1, logout: 1, whoami: 1, board: 1, get: 2, create: 1, edit: 2, move: 3, comment: 2, archive: 2, restore: 2, delete: 2, export: 1, import: 2, dispatch: 2, "dispatch-status": 2, suggest: 1, suggestions: 3 }
   if (positionals.length > limits[command]) throw new CliError("Unexpected positional arguments. Run agora help.", 2)
   const allowed = new Set(["url", "token", "json", "help", ...({
-    status: ["all", "mine", "assignee", "search", "limit", "epics"], ls: ["all", "mine", "assignee", "search", "limit", "epics"],
+    status: ["all", "mine", "assignee", "search", "limit", "epics", "color", "list"], ls: ["all", "mine", "assignee", "search", "limit", "epics", "color"],
     suggest: ["title", "description", "column", "data", "stdin", "reason"], suggestions: ["state", "limit", "offset"],
     login: ["token-stdin"], create: ["title", "description", "column", "data", "stdin", "revision"],
     edit: ["title", "description", "column", "data", "stdin", "revision"], move: ["position", "revision"],
@@ -283,8 +450,16 @@ export async function main(args = process.argv.slice(2)) {
     const assignee = flags.mine ? (await http(config, "/api/auth/session")).name : flags.assignee
     const groups = statusGroups(state, { columns: command === "ls" ? positionals.slice(1) : [], all: flags.all === true, assignee, search: flags.search, epics: flags.epics === true })
     if (flags.json) { output({ revision: state.revision, groups }); return }
-    const color = process.stdout.isTTY && !process.env.NO_COLOR
-    process.stdout.write(renderStatus(state, groups, { width: process.stdout.columns || 100, color, limit: integer(flags.limit ?? 20, "Limit"), origin: new URL(config.url).host }))
+    const color = wantsColor(flags)
+    const origin = new URL(config.url).host
+    // Under `watch` stdout is no terminal, but watch passes its size in COLUMNS and LINES.
+    const width = process.stdout.columns || Number(process.env.COLUMNS) || 120
+    const height = process.stdout.rows || Number(process.env.LINES) || undefined
+    if (command === "ls" || flags.list) {
+      process.stdout.write(renderStatus(state, groups, { width, color, limit: integer(flags.limit ?? 20, "Limit"), origin }))
+      return
+    }
+    process.stdout.write(renderBoard(state, groups, { width, height, color, limit: flags.limit === undefined ? undefined : integer(flags.limit, "Limit"), origin }))
     return
   }
   // Preserve the complete server response, including planning classifications.

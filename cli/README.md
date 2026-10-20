@@ -7,12 +7,17 @@ a named API token at the hidden prompt. Credentials are stored privately (0600).
 `agora board --json`, `get`, `create`, `edit`, `move`, `comment`, `archive`,
 `restore`, `delete`, `export` and `import` all use the shared HTTP API.
 
-Run `agora` on its own to see the board at a glance: In Progress, Review and
-Todo, highest priority first, each card with its short id, priority, assignee
-and whether it is ready to start, waiting on a person or blocked. `agora status`
-takes `--all` (adds Backlog), `--mine`, `--assignee NAME`, `--search TEXT`,
-`--limit N` and `--json`; `agora ls COLUMN...` shows the columns you name
-(`agora ls done --limit 10`).
+Run `agora` on its own to see the board as the web shows it: In Progress,
+Review and Todo side by side, each card a box with its breadcrumb (the epics
+above it), its title, and a footer with its short id, priority, assignee, PR
+and whether it is ready to start, waiting on a person or blocked. Columns stack
+when the terminal is under about 90 columns wide, and each column shows the
+cards that fit the terminal's height, then "+ N more". `agora status` takes
+`--all` (adds Backlog), `--mine`, `--assignee NAME`, `--search TEXT`,
+`--limit N` (cards per column), `--list` (one line per card instead),
+`--color` (color even when stdout is not a terminal, as under `watch -c`;
+`FORCE_COLOR=1` does the same, `NO_COLOR` turns it off) and `--json`.
+`agora ls COLUMN...` lists the columns you name (`agora ls done --limit 10`).
 
 This package is distributed through local `npm pack` artifacts until registry
 ownership and release are configured. Copying `agora.mjs` elsewhere also works:

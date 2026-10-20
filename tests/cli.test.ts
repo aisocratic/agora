@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { http, validateUrl } from "../cli/agora.mjs"
+import { planTags as planTagsBoard, renderBoard, statusGroups as statusGroupsBoard, wantsColor, wrapText } from "../cli/agora.mjs"
 
 afterEach(() => vi.unstubAllGlobals())
 describe("standalone CLI boundary", () => {
@@ -79,5 +80,71 @@ describe("agora comment", () => {
     // Flag validation fails with exit 2; getting past it means only the (absent) server is missing.
     expect(result.stderr).not.toContain("is not supported by comment")
     expect(result.status).not.toBe(2)
+  })
+})
+
+describe("agora board view", () => {
+  const card = (id: string, column: string, extra: Record<string, unknown> = {}) => ({ id: `${id}-0000-0000`, title: `Card ${id}`, column, archived: false, type: "task", priority: 2, assignee: "agent", updatedAt: "2026-10-20", ...extra })
+  const state = {
+    revision: 3,
+    workflow: { columns: [{ id: "backlog", label: "Backlog", role: "backlog" }, { id: "todo", label: "Todo", role: "todo" }, { id: "doing", label: "In Progress", role: "doing" }, { id: "review", label: "Review", role: "review" }] },
+    board: { cards: [
+      card("p", "todo", { type: "epic", title: "Fed jobs" }),
+      card("a", "todo", { parentId: "p-0000-0000", priority: 3, title: "Apply to a company with a rather long title that has to wrap across several lines in a narrow card" }),
+      card("b", "todo"), card("c", "todo"), card("d", "todo"),
+      card("r", "review", { prUrl: "https://github.com/o/r/pull/829" }),
+      card("g", "doing"),
+    ] },
+    runnableNow: ["b-0000-0000"], gated: [{ id: "a-0000-0000" }], readyToMerge: [{ id: "r-0000-0000" }],
+  }
+  const groups = () => statusGroupsBoard(state)
+
+  it("draws each card as a rounded box with its breadcrumb, wrapped title and footer", () => {
+    const text = renderBoard(state, groups(), { width: 120, origin: "board.test" })
+    expect(text).toContain("╭")
+    expect(text).toContain("╯")
+    expect(text).toContain("│ Fed jobs")
+    expect(text).toMatch(/a-0000-0  \*\*\*  agent\s+waiting │/)
+    expect(text).toContain("#829 to merge")
+    // Columns sit side by side: one line holds all three headers.
+    expect(text.split("\n").some((line) => line.includes("In Progress") && line.includes("Review") && line.includes("Todo"))).toBe(true)
+    expect(text).not.toContain("\x1b[")
+  })
+
+  it("wraps titles to the card and cuts them with an ellipsis", () => {
+    const lines = wrapText("one two three four five six seven eight nine ten", 10, 2)
+    expect(lines).toHaveLength(2)
+    expect(lines[1].endsWith("…")).toBe(true)
+    expect(lines.every((line: string) => [...line].length <= 10)).toBe(true)
+  })
+
+  it("keeps every line of a card the same width", () => {
+    const todoOnly = statusGroupsBoard(state, { columns: ["todo"] })
+    const text = renderBoard(state, todoOnly, { width: 40 })
+    const box = text.split("\n").filter((line) => /^[╭│╰]/.test(line))
+    expect(box.length).toBeGreaterThan(4)
+    expect(new Set(box.map((line) => [...line].length))).toEqual(new Set([40]))
+  })
+
+  it("stacks the columns on a narrow terminal", () => {
+    const text = renderBoard(state, groups(), { width: 70 })
+    const lines = text.split("\n")
+    expect(lines.some((line) => line.includes("In Progress") && line.includes("Todo"))).toBe(false)
+    expect(lines.findIndex((line) => line.includes(" Todo "))).toBeGreaterThan(lines.findIndex((line) => line.includes(" Review ")))
+  })
+
+  it("shows + N more past the limit or the terminal height", () => {
+    expect(renderBoard(state, groups(), { width: 120, limit: 1 })).toContain("+ 3 more")
+    expect(renderBoard(state, groups(), { width: 120, height: 14 })).toMatch(/\+ \d+ more/)
+  })
+
+  it("colors only when asked or on a terminal", () => {
+    expect(wantsColor({}, {}, false)).toBe(false)
+    expect(wantsColor({}, {}, true)).toBe(true)
+    expect(wantsColor({}, { NO_COLOR: "1" }, true)).toBe(false)
+    expect(wantsColor({ color: true }, { NO_COLOR: "1" }, false)).toBe(true)
+    expect(wantsColor({}, { FORCE_COLOR: "1" }, false)).toBe(true)
+    expect(renderBoard(state, groups(), { width: 120, color: true })).toContain("\x1b[")
+    expect(planTagsBoard(state).get("b-0000-0000")).toBe("ready")
   })
 })

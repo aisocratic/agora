@@ -39,13 +39,21 @@ other copies. CLI logout is separate from browser session logout.
 
 ## Commands
 
-`agora` on its own (or `agora status`) prints the board at a glance: In
-Progress, Review and Todo, highest priority first, with each card's short id,
-priority, assignee and plan status (ready, waiting on a person, blocked, ready
-to merge). Flags: `--all` adds Backlog, `--mine` / `--assignee NAME`,
-`--search TEXT`, `--limit N` (cards per waiting column, default 20) and
-`--json`. `agora ls COLUMN...` shows only the columns named, by id, label or
-role (`agora ls doing review`, `agora ls done --limit 10`).
+`agora` on its own (or `agora status`) prints the board like the web board:
+In Progress, Review and Todo as columns side by side, highest priority first.
+Each card is a rounded box: its breadcrumb (parent epics) dimmed, the title
+wrapped to three lines, and a footer with the short id, priority, assignee, PR
+number and plan status (ready, waiting, a person's, blocked, to merge). Column
+headers carry the count and a summary of the plan statuses. Width comes from
+the terminal or `$COLUMNS` (default 120) and height from the terminal or
+`$LINES`; under about 90 columns the columns stack. Each column shows the
+cards that fit the height (8 when the height is unknown), then "+ N more".
+Flags: `--all` adds Backlog, `--mine` / `--assignee NAME`, `--search TEXT`,
+`--limit N` (cards per column), `--list` (the one-line-per-card list),
+`--color` (ANSI color even without a terminal, e.g. under `watch -c`;
+`FORCE_COLOR=1` also forces it, `NO_COLOR` disables it) and `--json`.
+`agora ls COLUMN...` lists only the columns named, by id, label or role
+(`agora ls doing review`, `agora ls done --limit 10`).
 
 ```sh
 agora whoami
