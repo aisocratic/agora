@@ -254,7 +254,7 @@ export async function main(args = process.argv.slice(2)) {
     suggest: ["title", "description", "column", "data", "stdin", "reason"], suggestions: ["state", "limit", "offset"],
     login: ["token-stdin"], create: ["title", "description", "column", "data", "stdin", "revision"],
     edit: ["title", "description", "column", "data", "stdin", "revision"], move: ["position", "revision"],
-    comment: ["author", "revision"], archive: ["revision"], restore: ["revision"], delete: ["revision"],
+    comment: ["author", "data", "revision"], archive: ["revision"], restore: ["revision"], delete: ["revision"],
     export: ["output"], import: ["stdin", "revision"], dispatch: ["revision", "idempotency-key"],
   }[command] ?? [])])
   for (const key of Object.keys(flags)) if (!allowed.has(key)) throw new CliError(`--${key} is not supported by ${command}.`, 2)

@@ -68,3 +68,16 @@ describe("agora status", async () => {
     expect(text).not.toContain("\x1b[")
   })
 })
+
+describe("agora comment", () => {
+  it("accepts --data, the form Athena's agent prompt uses", async () => {
+    const { spawnSync } = await import("node:child_process")
+    const result = spawnSync(process.execPath, ["cli/agora.mjs", "comment", "card-1", "--data", '{"body":"hi"}'], {
+      env: { ...process.env, AGORA_URL: "http://127.0.0.1:9", AGORA_TOKEN: "t".repeat(40), AGORA_CONFIG: "/nonexistent" },
+      encoding: "utf8",
+    })
+    // Flag validation fails with exit 2; getting past it means only the (absent) server is missing.
+    expect(result.stderr).not.toContain("is not supported by comment")
+    expect(result.status).not.toBe(2)
+  })
+})
