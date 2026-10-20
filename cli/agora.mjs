@@ -102,8 +102,8 @@ async function promptToken() {
   try { return (await reader.question("")).trim() }
   finally { reader.close(); process.stderr.write("\n") }
 }
-const booleanFlags = new Set(["json", "stdin", "token-stdin", "help", "force"])
-const valueFlags = new Set(["url", "token", "title", "description", "column", "data", "revision", "position", "author", "output", "idempotency-key", "reason", "state", "limit", "offset"])
+const booleanFlags = new Set(["json", "stdin", "token-stdin", "help", "force", "all", "mine", "epics"])
+const valueFlags = new Set(["url", "token", "title", "description", "column", "data", "revision", "position", "author", "output", "idempotency-key", "reason", "state", "limit", "offset", "assignee", "search"])
 function parseArgs(args) {
   const flags = {}
   const positionals = []
@@ -139,7 +139,7 @@ export async function http(config, path, method = "GET", body) {
   return data
 }
 const output = (data) => process.stdout.write(JSON.stringify(data, null, 2) + "\n")
-const help = `Agora — HTTP client for a shared board (Node 20.9+)\n\n  agora login --url https://board.example.com [--token-stdin]\n  agora logout\n  agora whoami\n  agora skill install [--force]         # current project .claude/skills/agora\n  agora board [--json]\n  agora get ID\n  agora create --title TEXT [--description TEXT] [--column backlog]\n  agora create --stdin                 # JSON draft on stdin\n  agora edit ID --title TEXT           # or --stdin / --data JSON\n  agora move ID COLUMN [--position N] [--revision N]\n  agora comment ID [--author NAME] < notes.md   # or --data '{\"body\":\"...\"}'\n  agora archive ID | restore ID | delete ID\n  agora dispatch ID --idempotency-key UUID [--revision N]\n  agora dispatch-status UUID\n  agora suggest --title TEXT [--description TEXT] [--reason TEXT]\n  agora suggest --stdin                # JSON draft, metadata and relations\n  agora suggestions list [--state pending|accepted|dismissed|all]\n  agora suggestions get UUID\n  agora export [--output backup.json]\n  agora import [backup.json]           # otherwise JSON stdin\n\nBoard mutations accept --revision N; stale revisions are never retried.\nUse AGORA_URL/AGORA_TOKEN for ephemeral credentials or agora login to save them.\n--json emits server JSON. --data accepts a JSON draft; --stdin reads one.\nExit codes: 2 input, 3 authentication, 4 conflict, 5 network/server.\n`
+const help = `Agora — HTTP client for a shared board (Node 20.9+)\n\n  agora                                # the board at a glance (same as agora status)\n  agora status [--all] [--mine] [--assignee NAME] [--search TEXT] [--limit N] [--json]\n  agora ls [COLUMN...]                  # e.g. agora ls doing review, agora ls done --limit 10\n  agora login --url https://board.example.com [--token-stdin]\n  agora logout\n  agora whoami\n  agora skill install [--force]         # current project .claude/skills/agora\n  agora board [--json]\n  agora get ID\n  agora create --title TEXT [--description TEXT] [--column backlog]\n  agora create --stdin                 # JSON draft on stdin\n  agora edit ID --title TEXT           # or --stdin / --data JSON\n  agora move ID COLUMN [--position N] [--revision N]\n  agora comment ID [--author NAME] < notes.md   # or --data '{\"body\":\"...\"}'\n  agora archive ID | restore ID | delete ID\n  agora dispatch ID --idempotency-key UUID [--revision N]\n  agora dispatch-status UUID\n  agora suggest --title TEXT [--description TEXT] [--reason TEXT]\n  agora suggest --stdin                # JSON draft, metadata and relations\n  agora suggestions list [--state pending|accepted|dismissed|all]\n  agora suggestions get UUID\n  agora export [--output backup.json]\n  agora import [backup.json]           # otherwise JSON stdin\n\nBoard mutations accept --revision N; stale revisions are never retried.\nUse AGORA_URL/AGORA_TOKEN for ephemeral credentials or agora login to save them.\n--json emits server JSON. --data accepts a JSON draft; --stdin reads one.\nExit codes: 2 input, 3 authentication, 4 conflict, 5 network/server.\n`
 function integer(value, label) {
   if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(Number(value))) throw new CliError(`${label} must be a nonnegative integer.`, 2)
   return Number(value)
@@ -154,19 +154,103 @@ async function draftInput(flags) {
   for (const field of ["title", "description", "column"]) if (flags[field] !== undefined) draft[field] = flags[field]
   return draft
 }
+// ---- agora status: the board at a glance ----------------------------------
+// Bare `agora` (with a board configured), `agora status` and `agora ls` print the
+// cards that are moving: In Progress first, then Review and Todo (Backlog with
+// --all, any column by naming it), each with its short id, priority, assignee
+// and title, and, from the board's plan, whether a card is ready to start,
+// waiting on a person, or blocked.
+const STATUS_ROLES = ["doing", "review", "todo"]
+const PRIORITY_MARK = { 1: "*  ", 2: "** ", 3: "***" }
+const clean = (text) => String(text ?? "").replace(/[\x00-\x1f\x7f-\x9f]/g, " ")
+
+/** Each card's plan tag: why it can or cannot start. */
+export function planTags(state) {
+  const tags = new Map()
+  const ids = (list) => (list ?? []).map((item) => (typeof item === "string" ? item : item.id))
+  for (const id of ids(state.blocked)) tags.set(id, "blocked")
+  for (const id of ids(state.gated)) tags.set(id, "waiting on a person")
+  for (const id of ids(state.humanAssigned)) tags.set(id, "a person's")
+  for (const id of ids(state.runnableNow)) tags.set(id, "ready")
+  for (const id of ids(state.readyToMerge)) tags.set(id, "ready to merge")
+  return tags
+}
+
+/**
+ * The cards `agora status` shows, grouped by column, with the same filters the flags take.
+ * @param {any} state
+ * @param {{ columns?: string[], all?: boolean, assignee?: string, search?: string, epics?: boolean }} [options]
+ */
+export function statusGroups(state, { columns, all = false, assignee, search, epics = false } = {}) {
+  const workflow = state.workflow?.columns ?? []
+  const wanted = columns?.length
+    ? workflow.filter((column) => columns.some((name) => [column.id, column.label, column.role].some((key) => String(key).toLowerCase() === name.toLowerCase())))
+    : workflow.filter((column) => STATUS_ROLES.includes(column.role) || (all && column.role === "backlog"))
+  // In Progress, Review, Todo, Backlog, then whatever else was asked for, in board order.
+  const order = (column) => { const i = ["doing", "review", "todo", "backlog"].indexOf(column.role); return i === -1 ? 10 + workflow.indexOf(column) : i }
+  const tags = planTags(state)
+  const needle = search?.toLowerCase()
+  return [...wanted].sort((a, b) => order(a) - order(b)).map((column) => {
+    const cards = state.board.cards
+      .filter((card) => card.column === column.id && !card.archived && (epics || card.type !== "epic"))
+      .filter((card) => !assignee || (card.assignee ?? "").toLowerCase() === assignee.toLowerCase())
+      .filter((card) => !needle || `${card.title} ${card.description ?? ""} ${card.id}`.toLowerCase().includes(needle))
+      .sort((a, b) => (b.priority ?? 2) - (a.priority ?? 2) || String(b.updatedAt).localeCompare(String(a.updatedAt)))
+      .map((card) => ({ id: card.id, title: card.title, priority: card.priority ?? 2, assignee: card.assignee ?? null, type: card.type, prUrl: card.prUrl ?? null, tag: tags.get(card.id) ?? null }))
+    return { column: column.id, label: column.label, role: column.role, cards }
+  })
+}
+
+/**
+ * The text `agora status` prints. `width` trims titles to the terminal; `color` adds ANSI emphasis.
+ * @param {any} state
+ * @param {any[]} groups
+ * @param {{ width?: number, color?: boolean, limit?: number, origin?: string }} [options]
+ */
+export function renderStatus(state, groups, { width = 100, color = false, limit = 20, origin = "" } = {}) {
+  const bold = (text) => (color ? `\x1b[1m${text}\x1b[0m` : text)
+  const dim = (text) => (color ? `\x1b[2m${text}\x1b[0m` : text)
+  const live = state.board.cards.filter((card) => !card.archived)
+  const head = [origin, `revision ${state.revision}`, `${live.length} cards`].filter(Boolean).join(" · ")
+  const lines = [bold("Agora") + dim(` · ${head}`), ""]
+  for (const group of groups) {
+    // In Progress cards read "blocked" in the plan only because they are taken; the board knows no runs, so no tags there.
+    const counts = new Map()
+    for (const card of group.cards) if (card.tag && group.role !== "doing") counts.set(card.tag, (counts.get(card.tag) ?? 0) + 1)
+    const summary = [...counts].map(([tag, n]) => `${n} ${tag}`).join(" · ")
+    lines.push(bold(`${group.label} (${group.cards.length})`) + (summary ? dim(`  ${summary}`) : ""))
+    // In Progress and Review are the live work: always every card. The rest stop at `limit`.
+    const shown = ["doing", "review"].includes(group.role) ? group.cards : group.cards.slice(0, limit)
+    for (const card of shown) {
+      const prefix = `  ${card.id.slice(0, 8)}  ${PRIORITY_MARK[card.priority] ?? "   "}  ${clean(card.assignee ?? "-").slice(0, 14).padEnd(14)}  `
+      const tag = card.tag && !["doing", "review"].includes(group.role) ? ` [${card.tag}]` : card.prUrl && group.role === "review" ? " [PR]" : ""
+      const room = Math.max(20, width - prefix.length - tag.length)
+      const title = clean(card.title)
+      lines.push(dim(prefix.slice(0, 12)) + prefix.slice(12) + (title.length > room ? `${title.slice(0, room - 1)}…` : title) + dim(tag))
+    }
+    if (shown.length < group.cards.length) lines.push(dim(`  … ${group.cards.length - shown.length} more (agora ls ${group.column} --limit ${group.cards.length})`))
+    if (!group.cards.length) lines.push(dim("  (none)"))
+    lines.push("")
+  }
+  return lines.join("\n")
+}
+
 export async function main(args = process.argv.slice(2)) {
   const { flags, positionals } = parseArgs(args)
-  const [command = "help", id, extra] = positionals
+  // Bare `agora` shows the board when one is configured (saved login or AGORA_URL), else the help.
+  const configured = positionals.length > 0 || flags.help || process.env.AGORA_URL || (await readConfig().catch(() => ({}))).url
+  const [command = configured ? "status" : "help", id, extra] = positionals
   if (command === "help" || flags.help) { process.stdout.write(help); return }
   if (command === "skill") {
     if (id !== "install" || positionals.length !== 2 || Object.keys(flags).some((key) => !["force", "json"].includes(key)))
       throw new CliError("Use agora skill install [--force] from the target project directory.", 2)
     output(await installSkill(flags.force === true)); return
   }
-  if (!["login", "logout", "whoami", "board", "get", "create", "edit", "move", "comment", "archive", "restore", "delete", "export", "import", "dispatch", "dispatch-status", "suggest", "suggestions"].includes(command)) throw new CliError("Unknown command. Run agora help.", 2)
-  const limits = { login: 1, logout: 1, whoami: 1, board: 1, get: 2, create: 1, edit: 2, move: 3, comment: 2, archive: 2, restore: 2, delete: 2, export: 1, import: 2, dispatch: 2, "dispatch-status": 2, suggest: 1, suggestions: 3 }
+  if (!["status", "ls", "login", "logout", "whoami", "board", "get", "create", "edit", "move", "comment", "archive", "restore", "delete", "export", "import", "dispatch", "dispatch-status", "suggest", "suggestions"].includes(command)) throw new CliError("Unknown command. Run agora help.", 2)
+  const limits = { status: 1, ls: 20, login: 1, logout: 1, whoami: 1, board: 1, get: 2, create: 1, edit: 2, move: 3, comment: 2, archive: 2, restore: 2, delete: 2, export: 1, import: 2, dispatch: 2, "dispatch-status": 2, suggest: 1, suggestions: 3 }
   if (positionals.length > limits[command]) throw new CliError("Unexpected positional arguments. Run agora help.", 2)
   const allowed = new Set(["url", "token", "json", "help", ...({
+    status: ["all", "mine", "assignee", "search", "limit", "epics"], ls: ["all", "mine", "assignee", "search", "limit", "epics"],
     suggest: ["title", "description", "column", "data", "stdin", "reason"], suggestions: ["state", "limit", "offset"],
     login: ["token-stdin"], create: ["title", "description", "column", "data", "stdin", "revision"],
     edit: ["title", "description", "column", "data", "stdin", "revision"], move: ["position", "revision"],
@@ -194,6 +278,15 @@ export async function main(args = process.argv.slice(2)) {
   if (["get", "edit", "move", "comment", "archive", "restore", "delete", "dispatch", "dispatch-status"].includes(command) && !id) throw new CliError("A card ID is required.", 2)
   if (command === "dispatch-status") { output(await http(config, `/api/dispatch/${encodeURIComponent(id)}`)); return }
   if (command === "get") { output(await http(config, `/api/cards/${encodeURIComponent(id)}`)); return }
+  if (command === "status" || command === "ls") {
+    const state = await http(config, "/api/board")
+    const assignee = flags.mine ? (await http(config, "/api/auth/session")).name : flags.assignee
+    const groups = statusGroups(state, { columns: command === "ls" ? positionals.slice(1) : [], all: flags.all === true, assignee, search: flags.search, epics: flags.epics === true })
+    if (flags.json) { output({ revision: state.revision, groups }); return }
+    const color = process.stdout.isTTY && !process.env.NO_COLOR
+    process.stdout.write(renderStatus(state, groups, { width: process.stdout.columns || 100, color, limit: integer(flags.limit ?? 20, "Limit"), origin: new URL(config.url).host }))
+    return
+  }
   // Preserve the complete server response, including planning classifications.
   if (command === "board") {
     const state = await http(config, "/api/board")

@@ -39,6 +39,14 @@ other copies. CLI logout is separate from browser session logout.
 
 ## Commands
 
+`agora` on its own (or `agora status`) prints the board at a glance: In
+Progress, Review and Todo, highest priority first, with each card's short id,
+priority, assignee and plan status (ready, waiting on a person, blocked, ready
+to merge). Flags: `--all` adds Backlog, `--mine` / `--assignee NAME`,
+`--search TEXT`, `--limit N` (cards per waiting column, default 20) and
+`--json`. `agora ls COLUMN...` shows only the columns named, by id, label or
+role (`agora ls doing review`, `agora ls done --limit 10`).
+
 ```sh
 agora whoami
 agora board --json
