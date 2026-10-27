@@ -84,6 +84,9 @@ function mountProjects({ columns, stay, preferences, ...props }: { columns?: str
 const rowOf = (scope: ReturnType<typeof within>, title: string) => scope.getAllByRole("button", { name: new RegExp(`^${title}`) }).find((button: HTMLElement) => button.classList.contains("agora-timeline-item"))!
 const card = (store: BoardStore, id: string) => store.getSnapshot().board.cards.find(item => item.id === id)
 it("Projects opens on projects with their sub-projects and tasks; sub-projects fold their subtasks", () => {
+  // The fixture's target dates are in October 2026: read them before they pass.
+  vi.useFakeTimers({ toFake: ["Date"] })
+  vi.setSystemTime(new Date("2026-10-07T12:00:00Z"))
   const { projects } = mountProjects()
   expect(projects.getByRole("button", { name: "Agent-ready workspace" })).toBeVisible()
   expect(projects.getByText("2 sub-projects · 2 tasks · next Oct 16, 2026")).toBeVisible()
