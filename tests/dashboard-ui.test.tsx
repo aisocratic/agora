@@ -247,6 +247,31 @@ it("selects cards with modifiers and moves and archives the selection together",
   await waitFor(() => expect(screen.queryByLabelText("Selected card actions")).not.toBeInTheDocument())
   expect(store.getSnapshot().board.cards.filter(card => card.archived)).toHaveLength(2)
 })
+it("selects the cards a dragged box touches, adds to the selection with Shift, and clears it on a click", () => {
+  const { container } = mountBoard()
+  // jsdom has no layout: place each Todo card in a 100px-tall row.
+  const rows = Array.from(container.querySelectorAll<HTMLElement>('[data-column="todo"] .agora-card'))
+  rows.forEach((element, index) => { element.getBoundingClientRect = () => ({ left: 0, top: index * 100, width: 200, height: 90, right: 200, bottom: index * 100 + 90, x: 0, y: index * 100, toJSON: () => ({}) }) })
+  const space = container.querySelector<HTMLElement>('[data-column="todo"] .agora-cards')!
+  const sweep = (from: number, to: number, init: PointerEventInit = {}) => {
+    fireEvent.pointerDown(space, { button: 0, pointerType: "mouse", clientX: 250, clientY: from, ...init })
+    fireEvent.pointerMove(window, { clientX: 150, clientY: to })
+    fireEvent.pointerUp(window)
+  }
+  sweep(10, 150)
+  expect(screen.getByText("2 selected")).toBeVisible()
+  expect(rows.slice(0, 2).every(element => element.dataset.selected === "true")).toBe(true)
+  sweep(310, 330, { shiftKey: true })
+  expect(screen.getByText("3 selected")).toBeVisible()
+  // A press on a card is the card's own: never a marquee.
+  fireEvent.pointerDown(rows[5], { button: 0, pointerType: "mouse", clientX: 50, clientY: 510 })
+  fireEvent.pointerMove(window, { clientX: 60, clientY: 700 })
+  fireEvent.pointerUp(window)
+  expect(screen.getByText("3 selected")).toBeVisible()
+  fireEvent.pointerDown(space, { button: 0, pointerType: "mouse", clientX: 250, clientY: 10 })
+  fireEvent.pointerUp(window)
+  expect(screen.queryByLabelText("Selected card actions")).not.toBeInTheDocument()
+})
 it("keeps selection and data intact when a bulk write fails", async () => {
   const { store } = mountBoard()
   vi.spyOn(store, "replace").mockRejectedValueOnce(new Error("Storage failed"))

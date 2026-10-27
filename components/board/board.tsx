@@ -48,10 +48,13 @@ import { ProjectView } from "./project-view"
 import { SORT_OPTIONS, dueLabel, findScope, projectGroups, slugify, sortCards, withinScope, type ColumnSort } from "../../lib/board-view"
 import { LogoTile } from "./cover-field"
 import { SubtreeProgress } from "./progress-ring"
+import { useMarqueeSelect } from "./use-marquee-select"
+import { dragGroupOf, groupMoveActions } from "../../lib/board-drop"
 import { subtreeProgress, type SubtaskProgress } from "../../lib/subtasks"
 import "./board.css"
 
-const SelectionContext = createContext<{ enabled: boolean; selected: Set<string>; toggle: (id: string) => void }>({ enabled: false, selected: new Set(), toggle: () => {} })
+/* `dragging` holds the cards travelling with the one under the pointer. */
+const SelectionContext = createContext<{ enabled: boolean; selected: Set<string>; dragging: Set<string>; toggle: (id: string) => void }>({ enabled: false, selected: new Set(), dragging: new Set(), toggle: () => {} })
 
 const DisplayContext = createContext({ description: true, metadata: true, compact: false, priority: true, type: true, assignee: true })
 
@@ -308,6 +311,7 @@ function SortableCard({
       data-compact={compact || display.compact}
       data-card-id={card.id}
       data-selected={selection.selected.has(card.id) || undefined}
+      data-group-dragging={(!isDragging && selection.dragging.has(card.id)) || undefined}
       tabIndex={selection.enabled ? 0 : undefined}
       aria-label={selection.enabled ? card.title : undefined}
       onClickCapture={event => {
@@ -748,12 +752,33 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
     const columnId = target?.column ?? String(over.id).replace(/^(column|edge):/, "")
     if (!isColumn(columnId) || !columns.some(column => column.id === columnId)) return
     if (workspace) setPreferences({ sortByColumn: { ...preferences.sortByColumn, [columnId]: "manual" } })
+    // A selected card carries the rest of the selection with it.
+    const group = dragGroupOf(board.cards, String(dragged.id), selectedIds)
+    if (group.length > 1) { void moveGroup(group.map(card => card.id), columnId, target?.id ?? null); return }
     const destination = board.cards.filter((card) => card.column === columnId && !card.archived)
     const position = target
       ? destination.findIndex((card) => card.id === target.id)
       : destination.length
     mutate({ type: "move", id: String(dragged.id), column: columnId, position })
   }
+  /* Moves run one by one, each against the board the last one left, so the
+     group lands together and in board order on either store. */
+  const moveGroup = async (ids: string[], column: ColumnId, beforeId: string | null) => {
+    if (bulkBusy) return
+    setBulkBusy(true)
+    let moved = 0
+    try {
+      for (const action of groupMoveActions(store.getSnapshot().board, ids, column, beforeId)) {
+        await store.dispatch(action)
+        moved++
+      }
+      setMessage(`Moved ${ids.length} selected cards.`)
+    } catch (cause) {
+      setMessage(`Could not update the board. ${moved ? `${moved} of ${ids.length} cards moved. ` : ""}${cause instanceof Error ? cause.message : "Try again."}`)
+    } finally { setBulkBusy(false) }
+  }
+  const dragGroupIds = activeId ? new Set(dragGroupOf(board.cards, activeId, selectedIds).map(card => card.id)) : new Set<string>()
+  const marquee = useMarqueeSelect({ getSelectedIds: () => selectedIds, setSelectedIds, disabled: !workspace || !!activeId || !!editor || view !== "board" })
   /* Shared boards review agent suggestions from either presentation. */
   const suggestionsInbox = mode === "shared" ? <SuggestionsInbox board={board} revision={snapshot.revision} workflow={workflow} ready={ready} onRefresh={async () => { await store.refresh?.(); return store.getSnapshot().revision ?? 0 }} onOpenCard={async (id) => {
     await store.refresh?.(); const latest = store.getSnapshot(); const card = latest.board.cards.find(card => card.id === id)
@@ -761,7 +786,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
     else setMessage("That accepted card is no longer on the board. Its suggestion history is retained.")
   }} /> : null
   return (
-    <WorkflowContext.Provider value={{ workflow, columns }}><ProgressContext.Provider value={progressOf}><SelectionContext.Provider value={{ enabled: workspace, selected: selectedIds, toggle: id => setSelectedIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next }) }}><ProjectContext.Provider value={{ projectOf: id => cardProjects.get(id), href: projectHref ? project => projectHref(slugify(project.title)) : undefined, hideChips: !!scope }}><DisplayContext.Provider value={workspace ? { description: preferences.properties.includes("description"), metadata: preferences.properties.includes("metadata"), compact: preferences.fullCardLimit === 0, priority: preferences.properties.includes("priority"), type: preferences.properties.includes("type"), assignee: preferences.properties.includes("assignee") } : { description, metadata, compact, priority: true, type: true, assignee: true }}><div className={`agora-board${workspace ? " agora-workspace" : ""}`} aria-label="Agora board">
+    <WorkflowContext.Provider value={{ workflow, columns }}><ProgressContext.Provider value={progressOf}><SelectionContext.Provider value={{ enabled: workspace, selected: selectedIds, dragging: dragGroupIds, toggle: id => setSelectedIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next }) }}><ProjectContext.Provider value={{ projectOf: id => cardProjects.get(id), href: projectHref ? project => projectHref(slugify(project.title)) : undefined, hideChips: !!scope }}><DisplayContext.Provider value={workspace ? { description: preferences.properties.includes("description"), metadata: preferences.properties.includes("metadata"), compact: preferences.fullCardLimit === 0, priority: preferences.properties.includes("priority"), type: preferences.properties.includes("type"), assignee: preferences.properties.includes("assignee") } : { description, metadata, compact, priority: true, type: true, assignee: true }}><div className={`agora-board${workspace ? " agora-workspace" : ""}`} aria-label="Agora board">
       {!workspace && <div className="agora-toolbar">
         <div>
           <h2>Your board</h2>
@@ -966,6 +991,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
           >
             <div
               className="agora-scroll"
+              onPointerDown={workspace ? marquee.onPointerDown : undefined}
               tabIndex={0}
               role="region"
               aria-label="Board columns; scroll horizontally to see all columns"
@@ -994,9 +1020,11 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
                 ))}
               </div>
             </div>
+            {marquee.marquee}
             {workspace && activeId && <div className="agora-edge-destinations">{columns.filter(column => ["backlog", "done", "wont-do"].includes(column.id)).map(column => <EdgeDestination key={column.id} {...column} />)}</div>}
             <DragOverlay zIndex={90}>
-              {active ? <div className={`agora-card${workspace ? " agora-card-preview" : ""}`}>
+              {active ? <div className={`agora-card${workspace ? " agora-card-preview" : ""}`} data-group-size={dragGroupIds.size > 1 ? dragGroupIds.size : undefined}>
+                {dragGroupIds.size > 1 && <span className="agora-drag-count" aria-label={`Moving ${dragGroupIds.size} cards`}>{dragGroupIds.size}</span>}
                 <div className="agora-card-top"><span className="agora-card-title">{active.title}</span><PriorityStar priority={active.priority} size={14} /></div>
                 {(!workspace || preferences.properties.includes("description")) && active.description && <p className="agora-card-description">{active.description}</p>}
                 <div className="agora-card-meta"><span className="agora-badge">{workflow.types.find(type => type.id === active.type)?.label ?? "Task"}</span>{active.model && <span>{active.model}</span>}{active.assignee && <span>{workflow.people.find(person => person.id === active.assignee)?.label ?? active.assignee}</span>}</div>

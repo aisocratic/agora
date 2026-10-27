@@ -183,3 +183,36 @@ test("a timeline marker leads to its card on the board, and Scope opens a projec
   await expect(board(page).getByRole("button", { name: "Scope: Alpha", exact: true })).toBeVisible()
 })
 
+
+test("a box dragged over cards selects them, and dragging one moves them together", async ({ page }) => {
+  for (const title of ["First pick", "Second pick", "Left behind"]) await add(page, title)
+  const todo = column(page, "Todo")
+  const card = (title: string) => todo.getByRole("article", { name: title })
+  const area = (await todo.boundingBox())!
+  const first = (await card("First pick").boundingBox())!
+  const second = (await card("Second pick").boundingBox())!
+  const behind = (await card("Left behind").boundingBox())!
+  // Order follows the column's sort; sweep from the gap beside the column over whichever two sit above the third.
+  const [top, bottom] = [first, second, behind].sort((a, b) => a.y - b.y)
+  await page.mouse.move(area.x + area.width + 8, top.y + 4)
+  await page.mouse.down()
+  await page.mouse.move(top.x + 24, bottom.y + bottom.height / 2, { steps: 10 })
+  await page.mouse.up()
+  await expect(board(page).getByText("2 selected", { exact: true })).toBeVisible()
+  const selected = await todo.locator('.agora-card[data-selected="true"]').evaluateAll(cards => cards.map(item => item.getAttribute("aria-label")))
+  expect(selected).toHaveLength(2)
+
+  // Pick up one selected card; the other travels with it to Review.
+  const grab = (await todo.getByRole("article", { name: selected[0]! }).boundingBox())!
+  const review = (await column(page, "Review").boundingBox())!
+  await page.mouse.move(grab.x + grab.width / 2, grab.y + 12)
+  await page.mouse.down()
+  await page.mouse.move(grab.x + grab.width / 2 + 12, grab.y + 24, { steps: 3 })
+  await expect(page.locator(".agora-drag-count")).toHaveText("2")
+  await page.mouse.move(review.x + review.width / 2, review.y + 60, { steps: 15 })
+  await page.mouse.up()
+  for (const title of selected) await expect(column(page, "Review").getByRole("article", { name: title! })).toBeVisible()
+  await expect(todo.locator(".agora-card")).toHaveCount(1)
+  await page.reload()
+  await expect(column(page, "Review").locator(".agora-card")).toHaveCount(2)
+})

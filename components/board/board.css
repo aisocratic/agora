@@ -856,3 +856,9 @@ a.agora-card-project:hover { color: var(--foreground); }
 .agora-progress-ring circle { fill: none; stroke-width: 2.5; stroke: color-mix(in srgb, var(--muted-foreground) 25%, transparent); }
 .agora-progress-ring circle + circle { stroke: #22c55e; transition: stroke-dasharray 0.2s; }
 .agora-scope-crumb .agora-scope-progress { margin-left: 6px; font: 11px var(--font-code); color: var(--muted-foreground); }
+
+/* Marquee selection and moving a selection together. */
+.agora-marquee { position: fixed; z-index: 40; pointer-events: none; border: 1px solid color-mix(in srgb, var(--primary) 60%, transparent); border-radius: 2px; background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.agora-card[data-group-dragging] { opacity: 0.4; }
+.agora-card[data-group-size] { position: relative; box-shadow: 4px 4px 0 -1px var(--agora-card, var(--card)), 4px 4px 0 0 var(--border), 8px 8px 0 -1px var(--agora-card, var(--card)), 8px 8px 0 0 var(--border); }
+.agora-drag-count { position: absolute; top: -8px; right: -8px; display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font: 600 11px/1 var(--font-code); }

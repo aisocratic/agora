@@ -151,7 +151,9 @@ priority and review flags, folding subtasks, and filtering the Board or Focus vi
 Changes persist in that browser. This sample board does not connect to production
 agents or the website database.
 
-The test workspace supports modifier-click selection (⌘/Ctrl/Shift), bulk moves,
+The test workspace supports modifier-click selection (⌘/Ctrl/Shift), selecting
+with a box dragged from empty board space (Shift adds to the selection, a click
+clears it), dragging a selected card to move the whole selection, bulk moves,
 priority and assignment changes, and archiving. Existing tasks autosave in the
 compact editor; new tasks are created explicitly. Add subtasks from the editor
 or use **Add task** beneath a column. The move/archive hover tray is disabled.
