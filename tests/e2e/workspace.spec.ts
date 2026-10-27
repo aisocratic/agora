@@ -61,7 +61,7 @@ test("the workspace toolbar controls the board", async ({ page }) => {
   // Backlog is hidden by default; the column menu brings it back.
   await expect(column(page, "Backlog")).toHaveCount(0)
   await board(page).getByRole("button", { name: /columns$/ }).click()
-  await page.getByRole("checkbox", { name: "Backlog", exact: true }).check()
+  await page.getByRole("radio", { name: "Backlog: Always show", exact: true }).click()
   await page.keyboard.press("Escape")
   await expect(column(page, "Backlog")).toBeVisible()
 })

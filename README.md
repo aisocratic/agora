@@ -154,7 +154,9 @@ agents or the website database.
 The test workspace supports modifier-click selection (⌘/Ctrl/Shift), selecting
 with a box dragged from empty board space (Shift adds to the selection, a click
 clears it), dragging a selected card to move the whole selection, bulk moves,
-priority and assignment changes, and archiving. Existing tasks autosave in the
+priority and assignment changes, and archiving. Each column can be shown
+always, only while it holds cards, or never (the Columns menu, or the column's
+own menu); the choice is remembered in that browser. Existing tasks autosave in the
 compact editor; new tasks are created explicitly. Add subtasks from the editor
 or use **Add task** beneath a column. The move/archive hover tray is disabled.
 

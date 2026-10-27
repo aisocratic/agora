@@ -110,12 +110,42 @@ it("Projects shows only the columns selected in the toolbar", () => {
   // Backlog is off by default, so the backlog task stays out of the project.
   expect(projects.queryByText("Explore weekly planning")).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole("button", { name: /columns$/ }))
-  fireEvent.click(screen.getByRole("checkbox", { name: "Backlog" }))
+  fireEvent.click(screen.getByRole("radio", { name: "Backlog: Always show" }))
   expect(projects.getByText("Explore weekly planning")).toBeVisible()
   // Hiding the project's own column keeps it heading the work still shown.
-  fireEvent.click(screen.getByRole("checkbox", { name: "In Progress" }))
+  fireEvent.click(screen.getByRole("radio", { name: "In Progress: Hide" }))
   expect(projects.getByRole("button", { name: "Agent-ready workspace" })).toBeVisible()
   expect(projects.getByText("Ship the dashboard")).toBeVisible()
+})
+it("shows each column always, only while it has cards, or never, and remembers the choice", async () => {
+  const { store } = mountBoard()
+  const columnsMenu = () => screen.getByRole("button", { name: /columns$/ })
+  fireEvent.click(columnsMenu())
+  expect(screen.getByRole("radio", { name: "Backlog: Hide" })).toHaveAttribute("aria-checked", "true")
+  // An empty column set to hide when empty stays away; always brings it back empty.
+  fireEvent.click(screen.getByRole("radio", { name: "Backlog: Hide when empty" }))
+  expect(screen.queryByRole("region", { name: "Backlog column" })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole("radio", { name: "Backlog: Always show" }))
+  expect(within(screen.getByRole("region", { name: "Backlog column" })).getByText(/No cards yet/)).toBeVisible()
+  // A column with cards stays while it has them, and steps aside once it has none.
+  fireEvent.click(screen.getByRole("radio", { name: "Review: Hide when empty" }))
+  expect(screen.getByRole("region", { name: "Review column" })).toBeVisible()
+  await store.dispatch({ type: "move", id: store.getSnapshot().board.cards.find(card => card.column === "review")!.id, column: "todo", position: 0 })
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Review column" })).not.toBeInTheDocument())
+  expect(columnsMenu()).toHaveTextContent("4 of 6 columns")
+  expect(JSON.parse(window.localStorage.getItem("agora.test-dashboard.view.v2")!)).toMatchObject({ columns: ["todo", "doing", "review", "backlog"], hideWhenEmpty: ["review"] })
+  // Each column's own menu carries the same choice.
+  fireEvent.click(screen.getByRole("button", { name: /^Backlog/ }))
+  fireEvent.click(screen.getByRole("radio", { name: "Backlog: Hide" }))
+  expect(screen.queryByRole("region", { name: "Backlog column" })).not.toBeInTheDocument()
+  cleanup()
+  mountBoard()
+  // A fresh board has a Review card again, so Review is back; the choices stand.
+  expect(screen.getByRole("region", { name: "Review column" })).toBeVisible()
+  expect(screen.queryByRole("region", { name: "Backlog column" })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: /columns$/ }))
+  expect(screen.getByRole("radio", { name: "Review: Hide when empty" })).toHaveAttribute("aria-checked", "true")
+  expect(screen.getByRole("region", { name: "Todo column" })).toBeVisible()
 })
 it("Projects folds a project and opens a sub-project's details before the card itself", () => {
   const { projects } = mountProjects()

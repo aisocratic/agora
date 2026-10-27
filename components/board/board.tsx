@@ -23,7 +23,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Archive, ArrowDown, ArrowUp, CalendarDays, Download, FolderKanban, GripVertical, List, Plus, Upload, X, GitMerge, UserCheck, Link2, LayoutGrid, Target, Search, ChevronDown, ChevronRight, ChevronUp, Pencil, Eye, Rows3, Layers, SlidersHorizontal, MoreHorizontal, MessageSquare, GitPullRequest } from "lucide-react"
+import { Archive, ArrowDown, ArrowUp, CalendarDays, Download, FolderKanban, GripVertical, List, Plus, Upload, X, GitMerge, UserCheck, Link2, LayoutGrid, Target, Search, ChevronDown, ChevronRight, ChevronUp, Pencil, Eye, Rows3, Layers, MoreHorizontal, MessageSquare, GitPullRequest } from "lucide-react"
 import {
   EMPTY_BOARD,
   isColumn,
@@ -43,7 +43,7 @@ import { PriorityStar } from "./priority-star"
 import { BulkActions, type BulkCommand } from "./bulk-actions"
 import { BoardSelect } from "./board-select"
 import { TaskFields } from "./task-fields"
-import { AddCardMenu, AssigneeMenu, BoardMenu, CheckMenu, ScopeMenu, useBoardPreferences, type ScopeOption } from "./view-controls"
+import { AddCardMenu, AssigneeMenu, BoardMenu, CheckMenu, ColumnViewPicker, ColumnsMenu, ScopeMenu, columnViewOf, useBoardPreferences, withColumnView, type ColumnView, type ScopeOption } from "./view-controls"
 import { ProjectView } from "./project-view"
 import { SORT_OPTIONS, dueLabel, findScope, projectGroups, slugify, sortCards, withinScope, type ColumnSort } from "../../lib/board-view"
 import { LogoTile } from "./cover-field"
@@ -460,7 +460,11 @@ function Column({
   collapsedIds = [],
   onToggleCollapsed,
   onQuickAdd,
+  view,
+  onViewChange,
 }: {
+  view?: ColumnView
+  onViewChange?: (view: ColumnView) => void
   workspace?: boolean
   fullCardLimit?: number
   sort?: ColumnSort
@@ -508,6 +512,7 @@ function Column({
         {workspace ? <BoardMenu align="start" className="agora-column-menu" label={<><span className="agora-badge" data-tone={id}>{label}</span><span className="agora-count">{cards.length}</span></>}>
           <label className="agora-menu-field">Sort {label}<BoardSelect aria-label={`Sort ${label}`} value={sort} onValueChange={value => onSortChange?.(value as ColumnSort)} options={SORT_OPTIONS} /></label>
           <label className="agora-menu-field">Assignee<BoardSelect aria-label={`Assignee in ${label}`} value={assignee} onValueChange={setAssignee} options={[{ value: "", label: "Everyone" }, ...workflow.people.map(person => ({ value: person.id, label: person.label }))]} /></label>
+          {view && onViewChange && <div className="agora-menu-field agora-menu-view">View<ColumnViewPicker label={label} value={view} onChange={onViewChange} /></div>}
         </BoardMenu> : <h3>
           <span className="agora-badge" data-tone={id}>{label}</span>
           <span className="agora-count" aria-label={`${cards.length} cards`}>{cards.length}</span>
@@ -649,7 +654,8 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
   const visibleTypes = focusCard && !chosenTypes.includes(focusCard.type ?? "task") ? [...chosenTypes, focusCard.type ?? "task"] : chosenTypes
   const chosenColumnIds = preferences.columns ?? workflow.columns.filter(column => ["todo", "doing", "review"].includes(column.role)).map(column => column.id)
   const visibleColumnIds = focusCard && !chosenColumnIds.includes(focusCard.column) ? [...chosenColumnIds, focusCard.column] : chosenColumnIds
-  const shownColumns = columns.filter(column => workspace ? visibleColumnIds.includes(column.id) : !columnFilter || column.id === columnFilter)
+  const columnView = (id: string) => columnViewOf(id, chosenColumnIds, preferences.hideWhenEmpty)
+  const setColumnView = (id: string, view: ColumnView) => setPreferences(withColumnView(id, view, chosenColumnIds, preferences.hideWhenEmpty))
   // Scope comes from the page's URL; without URLs the Scope menu sets it in place.
   const [localScope, setLocalScope] = useState<string | null>(null)
   const scope = !workspace ? undefined
@@ -694,6 +700,12 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
   /* New cards on a project page land in that project when the type allows it. */
   const scopedParent = (type: string) => scope && typeLevel(workflow, type) < typeLevel(workflow, scope.type) ? scope.id : null
   const visibleCards = board.cards.filter(card => !card.archived && inScope(card) && (workspace ? isProject(card) || visibleTypes.includes(card.type ?? "task") : (!typeFilter || (card.type ?? "task") === typeFilter) && (!columnFilter || card.column === columnFilter)) && `${card.title} ${card.description} ${card.assignee ?? ""}`.toLowerCase().includes(search.toLowerCase()))
+  /* A column set to hide when empty steps aside while none of its cards are
+     shown. Dragging changes nothing: it stays away until it holds a card. */
+  const columnCards = (id: string) => visibleCards.filter(card => card.column === id && !isProject(card))
+  const shownColumns = columns.filter(column => workspace
+    ? visibleColumnIds.includes(column.id) && !(preferences.hideWhenEmpty.includes(column.id) && column.id !== focusCard?.column && columnCards(column.id).length === 0)
+    : !columnFilter || column.id === columnFilter)
   if (sort === "priority") visibleCards.sort((a, b) => (b.priority ?? 1) - (a.priority ?? 1))
   if (sort === "newest") visibleCards.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const initialColumn = workflow.columns.find((column) => column.role === (workspace ? "todo" : "backlog"))?.id ?? workflow.columns[0].id
@@ -921,7 +933,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
             {[5,10,15,-1].map(limit => <button className="agora-menu-option" aria-pressed={preferences.fullCardLimit === limit} key={limit} onClick={() => setPreferences({ fullCardLimit: limit })}>{limit < 0 ? "All cards" : `First ${limit} cards`}</button>)}
           </BoardMenu>
           <CheckMenu label={chosenTypes.length === filterTypes.length ? "All types" : `${chosenTypes.length} types`} icon={<Layers size={14} />} options={filterTypes} selected={chosenTypes} onChange={types => setPreferences({ types })} />
-          <CheckMenu label={chosenColumnIds.length === columns.length ? "All columns" : `${chosenColumnIds.length} of ${columns.length} columns`} icon={<SlidersHorizontal size={14} />} options={columns} selected={chosenColumnIds} onChange={columns => setPreferences({ columns })} />
+          <ColumnsMenu columns={columns} visible={chosenColumnIds} hideWhenEmpty={preferences.hideWhenEmpty} onChange={setColumnView} />
           <BoardMenu label={<span className="agora-sr-only">Board actions</span>} icon={<MoreHorizontal size={16} />}>
             <button className="agora-menu-option" onClick={() => setArchiveOpen(!archiveOpen)}><Archive size={14} />Archive ({archived.length})</button>
             <label className="agora-menu-field">Search cards<input aria-label="Search test cards" placeholder="Title, details, assignee…" value={search} onChange={event => setSearch(event.target.value)} /></label>
@@ -1010,9 +1022,9 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
                     onSortChange={sort => setPreferences({ sortByColumn: { ...preferences.sortByColumn, [column.id]: sort } })}
                     collapsedIds={preferences.collapsed.filter(id => !focusAncestors.has(id))}
                     onToggleCollapsed={id => setPreferences({ collapsed: preferences.collapsed.includes(id) ? preferences.collapsed.filter(item => item !== id) : [...preferences.collapsed, id] })}
-                    cards={visibleCards.filter(
-                      (card) => card.column === column.id && !isProject(card),
-                    )}
+                    cards={columnCards(column.id)}
+                    view={workspace ? columnView(column.id) : undefined}
+                    onViewChange={view => setColumnView(column.id, view)}
                     onNew={() => setEditor({ column: column.id, revision: snapshot.revision, newId: crypto.randomUUID() })}
                     onEdit={(card) => setEditor({ card, column: card.column, revision: snapshot.revision })}
                     onAction={mutate}
