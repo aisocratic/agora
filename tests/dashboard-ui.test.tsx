@@ -211,6 +211,15 @@ it("a project page shows only that project's cards on the kanban and files new w
   fireEvent.click(dialog.getByRole("button", { name: "Create task" }))
   await waitFor(() => expect(store.getSnapshot().board.cards.find(item => item.title === "Scoped task")?.parentId).toBe("p"))
 })
+it("rings each parent card with how much of the work under it is done, and puts the scope's share in the breadcrumb", () => {
+  mountProjects({ scopeSlug: "agent-ready-workspace", projectHref: slug => `/project/${slug}`, projectsHref: "/" })
+  // The project's leaves: the epic's one task (in progress), two loose tasks, an empty epic and a finished one.
+  expect(within(screen.getByRole("navigation", { name: "Project" })).getByText("(20%)")).toBeVisible()
+  const epic = screen.getByRole("button", { name: "Rename Ship the dashboard" }).closest("article")!
+  expect(within(epic).getByRole("img", { name: "0 of 1 subtask done (0%)" })).toBeVisible()
+  const leaf = screen.getByRole("button", { name: "Rename Document the review workflow" }).closest("article")!
+  expect(within(leaf).queryByRole("img", { name: /subtasks? done/ })).not.toBeInTheDocument()
+})
 it("links each project to its page and says when a page's project is missing", () => {
   const { projects } = mountProjects({ projectHref: slug => `/project/${slug}` })
   const view = projects.getByRole("link", { name: "View project Agent-ready workspace" })

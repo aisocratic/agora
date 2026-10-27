@@ -47,6 +47,8 @@ import { AddCardMenu, AssigneeMenu, BoardMenu, CheckMenu, ScopeMenu, useBoardPre
 import { ProjectView } from "./project-view"
 import { SORT_OPTIONS, dueLabel, findScope, projectGroups, slugify, sortCards, withinScope, type ColumnSort } from "../../lib/board-view"
 import { LogoTile } from "./cover-field"
+import { SubtreeProgress } from "./progress-ring"
+import { subtreeProgress, type SubtaskProgress } from "../../lib/subtasks"
 import "./board.css"
 
 const SelectionContext = createContext<{ enabled: boolean; selected: Set<string>; toggle: (id: string) => void }>({ enabled: false, selected: new Set(), toggle: () => {} })
@@ -55,6 +57,8 @@ const DisplayContext = createContext({ description: true, metadata: true, compac
 
 /* Which project each card rolls up to, so the kanban can show it. */
 const ProjectContext = createContext<{ projectOf: (id: string) => BoardCard | undefined; href?: (project: BoardCard) => string; hideChips: boolean }>({ projectOf: () => undefined, hideChips: true })
+/* Each parent card's completion: the done share of the leaves under it. */
+const ProgressContext = createContext<(id: string) => SubtaskProgress | null>(() => null)
 const WorkflowContext = createContext({ workflow: DEFAULT_WORKFLOW, columns: DEFAULT_WORKFLOW.columns.map(({ id, label }) => ({ id, label })) })
 
 let lastDragEndAt = 0
@@ -281,6 +285,7 @@ function SortableCard({
   const selection = useContext(SelectionContext)
   const projects = useContext(ProjectContext)
   const project = projects.projectOf(card.id)
+  const progress = useContext(ProgressContext)(card.id)
   const [renaming, setRenaming] = useState(false)
   const [title, setTitle] = useState(card.title)
   const finishRename = () => {
@@ -363,6 +368,7 @@ function SortableCard({
       {display.metadata && <div className="agora-card-meta">
         {display.type && <span className="agora-badge" data-tone={card.type ?? "task"}>{workflow.types.find(type => type.id === card.type)?.label ?? card.type ?? "Task"}</span>}
         {childCount > 0 && onToggleChildren && <button className="agora-children-count" aria-label={`Toggle subtasks of ${card.title}`} aria-expanded={expanded} title={`${childCount} ${childCount === 1 ? "card" : "cards"} inside`} onClick={onToggleChildren}>{childCount}{expanded ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />}</button>}
+        {progress && <SubtreeProgress progress={progress} />}
         {project && project.id !== card.id && !projects.hideChips && (() => {
           const chip = <>{project.imageUrl ? <LogoTile src={project.imageUrl} /> : <FolderKanban size={11} aria-hidden="true" />}<span>{project.title}</span></>
           return projects.href
@@ -679,6 +685,8 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
     for (const card of group.cards) cardProjects.set(card.id, group.project)
   }
   const inScope = (card: BoardCard) => !scope || withinScope(board.cards, card, scope.id)
+  const progressOf = subtreeProgress(board.cards, workflow)
+  const scopeProgress = scope ? progressOf(scope.id) : null
   /* New cards on a project page land in that project when the type allows it. */
   const scopedParent = (type: string) => scope && typeLevel(workflow, type) < typeLevel(workflow, scope.type) ? scope.id : null
   const visibleCards = board.cards.filter(card => !card.archived && inScope(card) && (workspace ? isProject(card) || visibleTypes.includes(card.type ?? "task") : (!typeFilter || (card.type ?? "task") === typeFilter) && (!columnFilter || card.column === columnFilter)) && `${card.title} ${card.description} ${card.assignee ?? ""}`.toLowerCase().includes(search.toLowerCase()))
@@ -753,7 +761,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
     else setMessage("That accepted card is no longer on the board. Its suggestion history is retained.")
   }} /> : null
   return (
-    <WorkflowContext.Provider value={{ workflow, columns }}><SelectionContext.Provider value={{ enabled: workspace, selected: selectedIds, toggle: id => setSelectedIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next }) }}><ProjectContext.Provider value={{ projectOf: id => cardProjects.get(id), href: projectHref ? project => projectHref(slugify(project.title)) : undefined, hideChips: !!scope }}><DisplayContext.Provider value={workspace ? { description: preferences.properties.includes("description"), metadata: preferences.properties.includes("metadata"), compact: preferences.fullCardLimit === 0, priority: preferences.properties.includes("priority"), type: preferences.properties.includes("type"), assignee: preferences.properties.includes("assignee") } : { description, metadata, compact, priority: true, type: true, assignee: true }}><div className={`agora-board${workspace ? " agora-workspace" : ""}`} aria-label="Agora board">
+    <WorkflowContext.Provider value={{ workflow, columns }}><ProgressContext.Provider value={progressOf}><SelectionContext.Provider value={{ enabled: workspace, selected: selectedIds, toggle: id => setSelectedIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next }) }}><ProjectContext.Provider value={{ projectOf: id => cardProjects.get(id), href: projectHref ? project => projectHref(slugify(project.title)) : undefined, hideChips: !!scope }}><DisplayContext.Provider value={workspace ? { description: preferences.properties.includes("description"), metadata: preferences.properties.includes("metadata"), compact: preferences.fullCardLimit === 0, priority: preferences.properties.includes("priority"), type: preferences.properties.includes("type"), assignee: preferences.properties.includes("assignee") } : { description, metadata, compact, priority: true, type: true, assignee: true }}><div className={`agora-board${workspace ? " agora-workspace" : ""}`} aria-label="Agora board">
       {!workspace && <div className="agora-toolbar">
         <div>
           <h2>Your board</h2>
@@ -901,7 +909,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
       </div>}
       {ready && workspace && (scopeSlug || scope) && <nav className="agora-scope-crumb" aria-label="Project">
         {scopeSlug ? <a href={projectsHref}>All projects</a> : <button onClick={() => setLocalScope(null)}>All projects</button>}<ChevronRight size={14} aria-hidden="true" />
-        {scope ? <span>{scope.title}</span> : <span role="alert">No project matches “{(() => { try { return decodeURIComponent(scopeSlug ?? "") } catch { return scopeSlug } })()}”. Showing all work.</span>}
+        {scope ? <span>{scope.title}{scopeProgress && <small className="agora-scope-progress" title={`${scopeProgress.done} of ${scopeProgress.total} subtasks done`}>({scopeProgress.percent}%)</small>}</span> : <span role="alert">No project matches “{(() => { try { return decodeURIComponent(scopeSlug ?? "") } catch { return scopeSlug } })()}”. Showing all work.</span>}
       </nav>}
       {/* A project page opens with the project itself: its cover, name and where
           it stands, so it is plain whose cards these are. */}
@@ -1101,6 +1109,6 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
           </div>
         </Modal>
       )}
-    </div></DisplayContext.Provider></ProjectContext.Provider></SelectionContext.Provider></WorkflowContext.Provider>
+    </div></DisplayContext.Provider></ProjectContext.Provider></SelectionContext.Provider></ProgressContext.Provider></WorkflowContext.Provider>
   )
 }
