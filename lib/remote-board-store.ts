@@ -1,5 +1,5 @@
 import { workflowSchema } from "./workflow"
-import { EMPTY_BOARD, parseBoard, type BoardAction } from "./board"
+import { EMPTY_BOARD, draftOf, parseBoard, type BoardAction } from "./board"
 import type { BoardController, BoardSnapshot } from "./board-storage"
 
 const INITIAL: BoardSnapshot = { board: EMPTY_BOARD, ready: false, error: null, readOnly: false, unsaved: false, pending: false }
@@ -62,6 +62,7 @@ export class RemoteBoardStore implements BoardController {
   }
   dispatch = async (action: BoardAction, revision?: number) => {
     if (action.type === "comment") await this.mutate("POST", { body: action.comment.body }, revision, `/api/cards/${encodeURIComponent(action.id)}/comments`)
+    else if (action.type === "create" || action.type === "edit") await this.mutate("POST", { action: { ...action, draft: draftOf(action.draft) } }, revision)
     else await this.mutate("POST", { action }, revision)
   }
   launch = async (id: string, idempotencyKey: string, revision?: number) => {

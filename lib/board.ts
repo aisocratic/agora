@@ -24,6 +24,14 @@ export type BoardAction =
   | { type: "archive" | "restore" | "delete"; id: string }
   | { type: "comment"; id: string; comment: CardComment }
 
+/* The fields a create or edit draft carries. The board UI often edits by
+   spreading a whole card; the shared API's drafts are strict, so a client
+   sends only these. */
+const DRAFT_KEYS = new Set<string>(["title", "description", "column", ...Object.keys(taskFieldsSchema.shape).filter((key) => key !== "comments")])
+export function draftOf(draft: CardDraft): CardDraft {
+  return Object.fromEntries(Object.entries(draft).filter(([key]) => DRAFT_KEYS.has(key))) as CardDraft
+}
+
 export function isColumn(value: unknown): value is ColumnId {
   return typeof value === "string" && value.length > 0 && value.length <= 100 && !/[\x00-\x1f\x7f]/.test(value)
 }

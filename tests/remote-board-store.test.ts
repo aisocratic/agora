@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { RemoteBoardStore } from "../lib/remote-board-store"
+import { actionSchema } from "../lib/server/http"
 
 const board = (title = "Original") => ({ version: 1, cards: [{
   id: "a", title, description: "", column: "todo", archived: false,
@@ -31,6 +32,18 @@ describe("asynchronous shared storage", () => {
     await expect(store.dispatch({ type: "archive", id: "a" }, 3)).rejects.toThrow("draft kept")
     expect(JSON.parse(request.mock.calls[1][1]!.body as string).revision).toBe(3)
     expect(store.getSnapshot()).toMatchObject({ revision: 5, pending: false, error: "Conflict: draft kept" })
+  })
+  it("sends a card spread into an edit as a draft the strict API accepts", async () => {
+    const request = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ board: board(), revision: 1 }))
+      .mockResolvedValueOnce(Response.json({ board: board(), revision: 2 }))
+    const store = new RemoteBoardStore(request)
+    await store.refresh()
+    const card = { ...store.getSnapshot().board.cards[0], comments: [], priority: 3 }
+    await store.dispatch({ type: "edit", id: "a", draft: card })
+    const sent = JSON.parse(request.mock.calls[1][1]!.body as string).action
+    expect(sent.draft).toEqual({ title: "Original", description: "", column: "todo", priority: 3 })
+    expect(actionSchema.safeParse(sent).success).toBe(true)
   })
   it("exposes pending state and rejects overlapping writes", async () => {
     let complete!: (response: Response) => void
