@@ -874,3 +874,17 @@ a.agora-card-project:hover { color: var(--foreground); }
 .agora-columns-legend { display: flex; justify-content: space-between; gap: 10px; margin: 8px 0 0; padding: 8px 4px 2px; border-top: 1px solid var(--border); white-space: nowrap; font: 10px var(--font-code); color: var(--muted-foreground); }
 .agora-columns-legend span { display: inline-flex; align-items: center; gap: 4px; }
 .agora-menu-view { grid-template-columns: 1fr auto; align-items: center; }
+
+/* A card's measured goal: "Accounts found 32/100 · 32%" over a thin bar. */
+.agora-card-goal { display: flex; align-items: center; gap: 8px; min-width: 0; margin-top: 4px; font: 10px var(--font-code); color: var(--muted-foreground); }
+.agora-card-goal > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agora-card-goal > [role="progressbar"] { flex: 1; min-width: 32px; height: 4px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--muted-foreground) 20%, transparent); }
+.agora-card-goal > [role="progressbar"] > i { display: block; height: 100%; border-radius: inherit; background: #22c55e; }
+.agora-card[data-compact="true"] .agora-card-goal { display: none; }
+.agora-goal-field { display: grid; gap: 8px; align-content: start; }
+.agora-goal-field > .agora-btn { justify-self: start; }
+.agora-goal-editor { margin: 0; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+.agora-goal-editor legend { padding: 0 4px; font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-goal-editor label { display: block; margin-bottom: 4px; font-size: 12px; }
+.agora-goal-editor input { width: 100%; }
+.agora-goal-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

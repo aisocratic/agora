@@ -86,14 +86,20 @@ Invalid inputs return 400, cross-origin browser mutations 403, stale revisions
 409, oversized bodies 413, and unavailable database/auth configuration 503.
 
 Drafts may also carry `type`, `assignee`, `effort`, `model`, `harness`, `prUrl`,
-`imageUrl`, `dueDate`, `automerge`, `needsHumanReview`, `parentId` and
+`imageUrl`, `dueDate`, `progress`, `automerge`, `needsHumanReview`, `parentId` and
 `dependencies`. `imageUrl` is a project or epic's cover: an HTTP(S) image URL,
 or an uploaded image the browser has already downscaled and stored inline as a
 PNG, JPEG, WebP or GIF data URL (at most 200,000 characters). End either with
 `#dark` to show a white logo on a black tile.
 `dueDate` is a target day (`YYYY-MM-DD`) or, while the day is not set, a month
 (`YYYY-MM`); the Projects view places cards on its timeline and calendar by it.
-Nullable assignment, runtime settings, PR URL, image, target date and parent can
+`progress` is a measured outcome, independent of the card's column, such as
+`{"label":"Accounts found","current":32,"total":100}`: a label of 1–80
+characters (trimmed) and whole counts with `0 ≤ current ≤ total` and a positive
+total. No other keys are accepted. Cards show it as "Accounts found 32/100 · 32%".
+Migration `005_card_progress.sql` holds the stored metadata to the same shape.
+The AI Socratic website's board accepts and returns the same object.
+Nullable assignment, runtime settings, PR URL, image, target date, progress and parent can
 be cleared with `null`; dependencies can be cleared with `[]`. Omitted optional edit fields preserve existing values.
 Parent/dependency IDs must exist, cannot refer to the card itself, and each graph
 must be acyclic. Comments are `{ id, body, author, createdAt }`; clients add them

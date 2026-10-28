@@ -48,6 +48,7 @@ import { ProjectView } from "./project-view"
 import { SORT_OPTIONS, dueLabel, findScope, projectGroups, slugify, sortCards, withinScope, type ColumnSort } from "../../lib/board-view"
 import { LogoTile } from "./cover-field"
 import { SubtreeProgress } from "./progress-ring"
+import { GoalProgressRow } from "./goal-progress"
 import { useMarqueeSelect } from "./use-marquee-select"
 import { dragGroupOf, groupMoveActions } from "../../lib/board-drop"
 import { subtreeProgress, type SubtaskProgress } from "../../lib/subtasks"
@@ -158,7 +159,7 @@ function CardEditor({
     description: card?.description ?? "",
     column: card?.column ?? column,
     priority: card?.priority, type: card?.type, assignee: card?.assignee, effort: card?.effort, model: card?.model, harness: card?.harness,
-    prUrl: card?.prUrl, imageUrl: card?.imageUrl, dueDate: card?.dueDate, automerge: card?.automerge, needsHumanReview: card?.needsHumanReview,
+    prUrl: card?.prUrl, imageUrl: card?.imageUrl, dueDate: card?.dueDate, progress: card?.progress, automerge: card?.automerge, needsHumanReview: card?.needsHumanReview,
     parentId: card?.parentId, dependencies: card?.dependencies,
   })
   const [comment, setComment] = useState("")
@@ -369,6 +370,7 @@ function SortableCard({
         </button>
       </div>
       {display.description && card.description && <p className="agora-card-description">{card.description}</p>}
+      <GoalProgressRow progress={card.progress} />
       {display.metadata && <div className="agora-card-meta">
         {display.type && <span className="agora-badge" data-tone={card.type ?? "task"}>{workflow.types.find(type => type.id === card.type)?.label ?? card.type ?? "Task"}</span>}
         {childCount > 0 && onToggleChildren && <button className="agora-children-count" aria-label={`Toggle subtasks of ${card.title}`} aria-expanded={expanded} title={`${childCount} ${childCount === 1 ? "card" : "cards"} inside`} onClick={onToggleChildren}>{childCount}{expanded ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />}</button>}

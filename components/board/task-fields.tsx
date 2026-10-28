@@ -1,5 +1,6 @@
 import { BoardSelect } from "./board-select"
 import { CoverField } from "./cover-field"
+import { GoalProgressField } from "./goal-progress"
 import type { BoardCard, BoardData, CardDraft } from "../../lib/board"
 import { typeLevel, type Workflow } from "../../lib/workflow"
 
@@ -75,5 +76,6 @@ export function PlanningFields({ draft, onChange, workflow, prefix }: { draft: C
     {(level > 1 || draft.imageUrl) && <div><label htmlFor={`${prefix}-image`}>Cover image</label>
       <CoverField id={`${prefix}-image`} value={draft.imageUrl} onChange={imageUrl => onChange({ ...draft, imageUrl })} />
     </div>}
+    <GoalProgressField progress={draft.progress} prefix={prefix} onChange={progress => onChange({ ...draft, progress })} />
   </>
 }

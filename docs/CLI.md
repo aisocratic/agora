@@ -85,6 +85,8 @@ Export writes backup schema version 1, not the server envelope.
 ```sh
 printf '%s' '{"title":"Investigate","description":"Context","column":"todo","type":"task","assignee":"claude","effort":"high","dependencies":[]}' | agora create --stdin
 agora edit AG-41 --title 'Reviewed title' --revision 12
+agora edit AG-41 --data '{"progress":{"label":"Accounts found","current":32,"total":100}}'
+agora edit AG-41 --data '{"progress":null}'   # remove the measured goal
 ```
 
 Mutations read the latest revision unless `--revision N` is supplied. An edit

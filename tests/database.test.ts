@@ -123,6 +123,30 @@ describe.skipIf(!databaseUrl)("real Postgres shared board", () => {
     expect(result.status).toBe(200)
     expect((await result.json()).board.cards).toHaveLength(2)
   })
+  it("stores a card's measured progress, validates it over HTTP and in the database", async () => {
+    const request = (body: unknown) => new Request("http://localhost/api/board", { method: "POST", headers: { "Content-Type": "application/json", Origin: "http://localhost" }, body: JSON.stringify(body) })
+    const before = await readBoard(pool)
+    const progress = { label: "Accounts found", current: 32, total: 100 }
+    const created = await POST(request({ revision: before.revision, action: { type: "create", id: "goal", draft: { ...draft, progress } } }))
+    expect(created.status).toBe(200)
+    let state = await created.json()
+    expect(state.board.cards.find((card: { id: string }) => card.id === "goal").progress).toEqual(progress)
+    expect((await pool.query("SELECT metadata->'progress' AS progress FROM cards WHERE id = 'goal'")).rows[0].progress).toEqual(progress)
+    for (const bad of [{ ...progress, current: 101 }, { ...progress, total: 0 }, { ...progress, current: 1.5 }, { ...progress, label: "" }, { ...progress, extra: 1 }]) {
+      const response = await POST(request({ revision: state.revision, action: { type: "edit", id: "goal", draft: { ...draft, progress: bad } } }))
+      expect(response.status).toBe(400)
+    }
+    // An edit that leaves the goal out keeps it; null removes it.
+    state = await (await POST(request({ revision: state.revision, action: { type: "edit", id: "goal", draft: { ...draft, title: "Renamed" } } }))).json()
+    expect(state.board.cards.find((card: { id: string }) => card.id === "goal").progress).toEqual(progress)
+    state = await (await POST(request({ revision: state.revision, action: { type: "edit", id: "goal", draft: { ...draft, progress: null } } }))).json()
+    expect(state.board.cards.find((card: { id: string }) => card.id === "goal").progress).toBeNull()
+    // Writers that bypass the API are held to the same shape.
+    for (const bad of [{ ...progress, current: 101 }, { ...progress, current: "32" }, { ...progress, label: " " }, { ...progress, extra: 1 }, "32/100"])
+      await expect(pool.query("UPDATE cards SET metadata = jsonb_set(metadata, '{progress}', $1::jsonb) WHERE id = 'goal'", [JSON.stringify(bad)])).rejects.toThrow("cards_progress_check")
+    await pool.query("UPDATE cards SET metadata = jsonb_set(metadata, '{progress}', $1::jsonb) WHERE id = 'goal'", [JSON.stringify(progress)])
+    expect((await readBoard(pool)).board.cards.find((card) => card.id === "goal")?.progress).toEqual(progress)
+  })
   it("rejects cross-origin mutations", async () => {
     const response = await POST(new Request("http://localhost/api/board", { method: "POST", headers: { Origin: "https://attacker.example", "Content-Type": "application/json" }, body: "{}" }))
     expect(response.status).toBe(403)

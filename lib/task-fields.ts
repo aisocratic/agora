@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { goalProgressSchema } from "./goal-progress"
 
 const name = z.string().trim().min(1).max(100)
 /* Uploads are downscaled before they are stored, so 200k characters is ample
@@ -30,6 +31,8 @@ export const taskFieldsSchema = z.object({
   /* The day work is due, or just its month while the day is still to be set. */
   dueDate: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?$/, "Use YYYY-MM-DD, or YYYY-MM while the day is not set")
     .refine((value) => value.length === 7 || new Date(`${value}T00:00:00Z`).toISOString().startsWith(value), "Use a real calendar day").nullable().optional(),
+  /* A measured outcome, e.g. { label: "Accounts found", current: 32, total: 100 }. */
+  progress: goalProgressSchema.nullable().optional(),
   automerge: z.boolean().optional(),
   needsHumanReview: z.boolean().optional(),
   parentId: z.string().min(1).max(200).nullable().optional(),
