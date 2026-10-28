@@ -30,6 +30,11 @@ export function WorkspaceEditor({ card, column, newId, cardType = "task", parent
   const postingRef = useRef(false)
   const [showAllChildren, setShowAllChildren] = useState(false)
   const [confirmArchive, setConfirmArchive] = useState(false)
+  const [dispatching, setDispatching] = useState(false)
+  const [dispatchMessage, setDispatchMessage] = useState("")
+  /* A retry after an uncertain outcome must reuse the same key and revision
+     (docs/DISPATCH.md); a new save starts a fresh attempt. */
+  const dispatchAttempt = useRef<{ key: string; revision?: number } | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saving = useRef<Promise<void> | null>(null)
   const prefix = useId()
@@ -60,6 +65,7 @@ export function WorkspaceEditor({ card, column, newId, cardType = "task", parent
           exists.current = true
           setCreated(true)
           saved.current = snapshot
+          dispatchAttempt.current = null
         }
         setSaveState(store.getSnapshot().unsaved ? "Unsaved in this tab" : "Saved")
       } catch (cause) {
@@ -79,7 +85,9 @@ export function WorkspaceEditor({ card, column, newId, cardType = "task", parent
     if (exists.current) timer.current = setTimeout(() => { void flush().catch(() => {}) }, 600)
   }
   const close = async () => {
-    if (!exists.current) { onClose(); return }
+    // A new card that was never sent can simply go; one still being created
+    // waits like any other save, so a failure keeps the draft on screen.
+    if (!exists.current && !saving.current) { onClose(); return }
     try { await flush(); onClose() } catch { /* Keep the draft open for correction or retry. */ }
   }
   /* Archiving a project or epic leaves its breakdown stranded, so offer to take
@@ -146,6 +154,19 @@ export function WorkspaceEditor({ card, column, newId, cardType = "task", parent
         })
         postingRef.current = false; setPosting(false)
       }}>{posting ? "Posting…" : "Comment"}</button>
+    </section>}
+    {created && store.launch && <section className="agora-dispatch" aria-label="Dispatch">
+      <button className="agora-btn" disabled={dispatching || saveState !== "Saved"} onClick={async () => {
+        setDispatching(true); setDispatchMessage("")
+        const attempt = dispatchAttempt.current ??= { key: crypto.randomUUID(), revision: store.getSnapshot().revision }
+        try {
+          const result = await store.launch!(id, attempt.key, attempt.revision)
+          setDispatchMessage(`${result.status}: ${result.message} Dispatch ID: ${result.id}`)
+        } catch (cause) { setDispatchMessage(cause instanceof Error ? cause.message : "Dispatch outcome could not be confirmed; check before retrying.") }
+        finally { setDispatching(false) }
+      }}>Dispatch saved task</button>
+      <p>Dispatch uses the saved task. Save any changes first.</p>
+      {dispatchMessage && <p role="status">{dispatchMessage}</p>}
     </section>}
     {error && <p className="agora-dialog-error" role="alert">{error}</p>}
     {confirmArchive && <section className="agora-editor-confirm" aria-label={`Archive ${typeLabel}`}>
