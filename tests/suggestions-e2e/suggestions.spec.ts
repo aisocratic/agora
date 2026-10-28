@@ -36,20 +36,22 @@ test("agent proposal becomes one reviewed card visible in another authenticated 
     const dialog = await open(page, title)
     await dialog.getByLabel("Proposed title").fill(`${title} reviewed`)
     await dialog.getByLabel("Details", { exact: true }).fill("Human-approved details")
+    // The workspace hides Backlog by default, so send the card where the board shows it.
+    await dialog.getByLabel("Destination column").selectOption("todo")
     await dialog.getByRole("button", { name: "Save review draft" }).click()
     await expect(dialog.getByText("Version 2", { exact: false })).toBeVisible()
     await page.screenshot({ path: info.outputPath("suggestions-review.png"), fullPage: true })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await dialog.getByRole("button", { name: "Accept into board" }).click()
     await expect(dialog.getByRole("heading", { name: "Accepted into the board" })).toBeVisible()
-    await expect(second.getByRole("button", { name: `Edit ${title} reviewed`, exact: true })).toBeVisible()
+    await expect(second.getByRole("article", { name: `${title} reviewed`, exact: true })).toBeVisible()
     const detail = (await (await request.get(`/api/suggestions/${suggestion.id}`, { headers })).json()).suggestion
     expect(detail).toMatchObject({ state: "accepted", version: 3, author: { name: "proposal-agent", kind: "token" }, proposal: { title }, reviewedDraft: { title: `${title} reviewed` } })
     await dialog.getByRole("button", { name: "Open accepted card" }).click()
-    await expect(page.getByRole("dialog").getByLabel("Title", { exact: true })).toHaveValue(`${title} reviewed`)
-    await page.getByRole("dialog").getByRole("button", { name: "Cancel", exact: true }).click()
+    await expect(page.getByRole("dialog").getByRole("textbox", { name: "Title", exact: true })).toHaveValue(`${title} reviewed`)
+    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click()
     await page.reload()
-    await expect(page.getByRole("button", { name: `Edit ${title} reviewed`, exact: true })).toBeVisible()
+    await expect(page.getByRole("article", { name: `${title} reviewed`, exact: true })).toBeVisible()
   } finally { await secondContext.close() }
 })
 test("conflicting board revisions and network failures preserve review drafts", async ({ page, request }) => {

@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test"
+import { addCard, choose, openBoardAction, openTaskSettings } from "./workspace"
 
-/** Exercise graph behavior entirely through the editor, on either storage backend. */
+/** Exercise graph behavior entirely through the plain board's editor (the Pages site). */
 export async function graphWorkflow(page: Page, prefix: string) {
   const titleA = `${prefix} prerequisite`, titleB = `${prefix} dependent`
   for (const title of [titleA, titleB]) {
@@ -57,6 +58,70 @@ export async function graphWorkflow(page: Page, prefix: string) {
   await expect(dialog).not.toBeVisible()
   await page.reload()
   await page.getByRole("button", { name: "Graph", exact: true }).click()
+  await expect(page.getByRole("button", { name: `Select ${titleA} edited`, exact: true })).toContainText("Ready now")
+  await expect(page.locator(`path[data-from="${idA}"][data-to="${idB}"]`)).toHaveCount(1)
+  await page.getByLabel("Find a card", { exact: true }).fill("unmatched-card-xyz")
+  await expect(page.getByText("No matching cards. Try a different title or status.")).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+}
+
+/** The same graph behavior on the workspace the Next app mounts: cards are
+    created from Add card, the graph opens from the board's actions menu, and
+    the editor saves as you type. */
+export async function workspaceGraphWorkflow(page: Page, prefix: string) {
+  const titleA = `${prefix} prerequisite`, titleB = `${prefix} dependent`
+  for (const title of [titleA, titleB]) await addCard(page, title, async (dialog) => {
+    await choose(dialog, "Assignee", "Claude")
+    if (title === titleB) {
+      await openTaskSettings(dialog)
+      await dialog.getByRole("checkbox", { name: titleA, exact: true }).check()
+    }
+  })
+  await openBoardAction(page, "Dependency graph")
+  await expect(page.getByText("Arrows point from prerequisite to dependent.")).toBeVisible()
+  const a = page.getByRole("button", { name: `Select ${titleA}`, exact: true })
+  const b = page.getByRole("button", { name: `Select ${titleB}`, exact: true })
+  await expect(a).toContainText("Ready now")
+  await expect(b).toContainText("Future wave")
+  const idA = await a.getAttribute("data-card-id"), idB = await b.getAttribute("data-card-id")
+  await expect(page.locator(`path[data-from="${idA}"][data-to="${idB}"]`)).toHaveCount(1)
+  await page.getByRole("button", { name: "Fit graph", exact: true }).click()
+  const fittedZoom = await page.getByLabel("Graph zoom").innerText()
+  await page.getByRole("button", { name: "Zoom in", exact: true }).click()
+  await expect(page.getByLabel("Graph zoom")).not.toHaveText(fittedZoom)
+  const stage = page.locator(".graph-stage")
+  const transform = await stage.getAttribute("style")
+  await page.getByRole("group", { name: "Interactive dependency map" }).press("ArrowLeft")
+  await expect(stage).not.toHaveAttribute("style", transform!)
+  await page.getByRole("group", { name: "Interactive dependency map" }).press("0")
+  await expect(page.getByLabel("Graph zoom")).toHaveText(fittedZoom)
+  await a.press("ArrowRight")
+  await expect(page.locator(".graph-node:focus")).toHaveCount(1)
+  await b.press("Enter")
+  await expect(page.getByRole("dialog").getByRole("textbox", { name: "Title", exact: true })).toHaveValue(titleB)
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click()
+  await expect(page.getByRole("dialog")).not.toBeVisible()
+  await page.getByLabel("Find a card", { exact: true }).fill(titleB)
+  await page.getByRole("region", { name: "Graph card list" }).getByRole("button", { name: `${titleB} Future wave`, exact: true }).click()
+  const details = page.getByRole("region", { name: "Selected card relationships" })
+  await expect(details.getByRole("heading", { level: 3 })).toHaveText(titleB)
+  await expect(details.getByRole("button", { name: titleA, exact: true })).toBeVisible()
+  await details.getByRole("button", { name: titleA, exact: true }).click()
+  await expect(details.getByRole("heading", { level: 3 })).toHaveText(titleA)
+  await details.getByRole("button", { name: "Open card and edit dependencies" }).click()
+  const dialog = page.getByRole("dialog")
+  await openTaskSettings(dialog)
+  // The editor saves as you type, so the server's cycle check answers straight away.
+  await dialog.getByRole("checkbox", { name: titleB, exact: true }).check()
+  await expect(dialog.getByRole("alert")).toContainText(/cycle/i)
+  await expect(dialog.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(titleA)
+  await dialog.getByRole("checkbox", { name: titleB, exact: true }).uncheck()
+  await dialog.getByRole("textbox", { name: "Title", exact: true }).fill(`${titleA} edited`)
+  await expect(dialog.getByRole("status")).toHaveText("Saved")
+  await dialog.getByRole("button", { name: "Close", exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await page.reload()
+  await openBoardAction(page, "Dependency graph")
   await expect(page.getByRole("button", { name: `Select ${titleA} edited`, exact: true })).toContainText("Ready now")
   await expect(page.locator(`path[data-from="${idA}"][data-to="${idB}"]`)).toHaveCount(1)
   await page.getByLabel("Find a card", { exact: true }).fill("unmatched-card-xyz")
