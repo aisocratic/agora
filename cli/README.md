@@ -4,8 +4,8 @@ A single dependency-free HTTP client for Agora, requiring Node 20.9+.
 
 Run `agora help`, then `agora login --url https://your-board.example.com` and enter
 a named API token at the hidden prompt. Credentials are stored privately (0600).
-`agora board --json`, `get`, `create`, `edit`, `move`, `comment`, `archive`,
-`restore`, `delete`, `export` and `import` all use the shared HTTP API.
+`agora board --json`, `get`, `create`, `edit`, `move`, `comment`, `review`,
+`archive`, `restore`, `delete`, `export` and `import` all use the shared HTTP API.
 
 Run `agora` on its own to see the board as the web shows it: In Progress,
 Review and Todo side by side, each card a box with its breadcrumb (the epics

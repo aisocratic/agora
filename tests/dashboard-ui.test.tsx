@@ -346,6 +346,30 @@ it("sets, shows, changes and removes a card's measurable goal", async () => {
   fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Remove goal" }))
   await waitFor(() => expect(saved()).toBeNull())
 })
+it("reviews a card in review: request changes with feedback, or approve", async () => {
+  const { store } = mountBoard()
+  const reviewed = () => store.getSnapshot().board.cards.find(card => card.title === "Review the empty states")!
+  // Only a card in review has the panel.
+  fireEvent.click(screen.getByRole("article", { name: "Queued task 0" }))
+  expect(within(screen.getByRole("dialog")).queryByRole("region", { name: "Review" })).not.toBeInTheDocument()
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close task" }))
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+  fireEvent.click(screen.getByRole("article", { name: "Review the empty states" }))
+  const panel = within(within(screen.getByRole("dialog")).getByRole("region", { name: "Review" }))
+  expect(panel.getByRole("button", { name: "Request changes" })).toBeDisabled()
+  fireEvent.change(panel.getByLabelText("Review feedback"), { target: { value: "Cover the empty search too" } })
+  fireEvent.click(panel.getByRole("button", { name: "Request changes" }))
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+  expect(reviewed()).toMatchObject({ column: "todo", reviewStatus: "changes_requested", reviewFeedback: "Cover the empty search too" })
+  expect(reviewed().comments?.at(-1)).toMatchObject({ body: "Changes requested: Cover the empty search too", author: "You" })
+  const card = within(screen.getByRole("region", { name: "Todo column" })).getByRole("article", { name: "Review the empty states" })
+  expect(within(card).getByRole("img", { name: "Review: changes requested — Cover the empty search too" })).toBeVisible()
+  // Back in review it needs a fresh verdict; approving with nothing to merge finishes it.
+  await store.dispatch({ type: "move", id: reviewed().id, column: "review", position: 0 })
+  fireEvent.click(screen.getByRole("article", { name: "Review the empty states" }))
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Approve" }))
+  await waitFor(() => expect(reviewed()).toMatchObject({ column: "done", reviewStatus: "approved" }))
+})
 it("does not lose newer typing when an earlier autosave is in flight", async () => {
   const { store } = mountBoard()
   const dispatch = store.dispatch.bind(store)
@@ -696,3 +720,16 @@ it("links each scope to its own page when pages have URLs", () => {
   expect(menu.getByRole("link", { name: "Ship the dashboard" })).toHaveAttribute("href", "/project/ship-the-dashboard/projects")
 })
 
+it("the plain board's card editor reviews a card in review too", async () => {
+  const card = (id: string, column: string): BoardCard => ({ id, title: id, description: "", column, archived: false, createdAt: "2026-10-01T00:00:00.000Z", updatedAt: "2026-10-01T00:00:00.000Z" })
+  let raw = JSON.stringify({ version: 1, cards: [card("Ready for a look", "review"), card("Still going", "doing")] })
+  const store = new BoardStore({ read: () => raw, write: value => { raw = value }, subscribe: () => () => {} }, DEMO_WORKFLOW)
+  render(<Board store={store} workflow={DEMO_WORKFLOW} />)
+  fireEvent.click(screen.getByRole("button", { name: "Edit Ready for a look" }))
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Approve" }))
+  const reviewed = () => store.getSnapshot().board.cards.find(item => item.id === "Ready for a look")!
+  await waitFor(() => expect(reviewed()).toMatchObject({ column: "done", reviewStatus: "approved" }))
+  expect(reviewed().comments?.[0]).toMatchObject({ body: "Approved.", author: "You" })
+  fireEvent.click(screen.getByRole("button", { name: "Edit Still going" }))
+  expect(within(screen.getByRole("dialog")).queryByRole("region", { name: "Review" })).not.toBeInTheDocument()
+})

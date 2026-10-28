@@ -63,6 +63,8 @@ agora create --title 'Implement the change' --column backlog
 agora edit AG-41 --title 'Updated task'
 agora move AG-41 review --position 0
 agora comment AG-41 --author claude < notes.md
+agora review AG-41 approve --comment 'Ship it'
+agora review AG-41 request-changes < feedback.md   # or --comment TEXT
 agora archive AG-41
 agora restore AG-41
 agora delete AG-41
@@ -72,7 +74,10 @@ agora export --output backup.json
 agora import backup.json
 ```
 
-Use actual IDs from `create` or `board`; creation generates a UUID. `delete`
+Use actual IDs from `create` or `board`; creation generates a UUID. `review`
+records a verdict on a card in a review column (see
+[DATABASE.md](DATABASE.md#review-verdicts)): `request-changes` needs the text from
+`--comment` or stdin, `approve` takes an optional `--comment`. `delete`
 requires an archived card. `--author` is optional and, when supplied, must match
 the authenticated token name. Comment attribution cannot be spoofed.
 

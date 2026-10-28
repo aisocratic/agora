@@ -10,6 +10,8 @@ import type { Workflow } from "../../lib/workflow"
 import { PlanningFields, TaskFields } from "./task-fields"
 import { QuickAdd } from "./quick-add"
 import { PriorityStar } from "./priority-star"
+import { ReviewPanel } from "./review-panel"
+import { reviewAction } from "../../lib/review"
 
 export function WorkspaceEditor({ card, column, newId, cardType = "task", parentId, board, store, workflow, onClose, onOpenCard }: {
   card?: BoardCard; column: string; newId?: string; cardType?: string; parentId?: string | null; board: BoardData; store: BoardController; workflow: Workflow
@@ -118,6 +120,11 @@ export function WorkspaceEditor({ card, column, newId, cardType = "task", parent
     <label className="agora-sr-only" htmlFor={`${prefix}-description`}>Description</label>
     <textarea className="agora-editor-description" id={`${prefix}-description`} placeholder="Add context, a plan, or acceptance criteria…" maxLength={10000} value={draft.description} onChange={event => change({ ...draft, description: event.target.value })} />
     <TaskFields hideIdentity draft={draft} onChange={change} board={board} card={latest} workflow={workflow} prefix={prefix} />
+    {latest && !latest.archived && workflow.columns.find(item => item.id === latest.column)?.role === "review" && <ReviewPanel card={latest} onReview={async (verdict, feedback) => {
+      await flush()
+      await store.dispatch(reviewAction(store.getSnapshot().board, id, verdict, feedback, workflow, "You"))
+      onClose()
+    }} />}
     {created && <section className="agora-editor-subtasks" aria-label="Subtasks">
       <QuickAdd label="Add subtask" onAdd={async title => {
         await flush()

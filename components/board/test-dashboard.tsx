@@ -19,7 +19,7 @@ export function TestDashboard({ homeHref = "/", projects, scopeSlug, page }: { h
       window.addEventListener("storage", onStorage)
       return () => window.removeEventListener("storage", onStorage)
     },
-  }))
+  }, DEMO_WORKFLOW))
   // The static demo can't serve extra paths, so it reads ?view= and ?project=.
   const [route] = useState(() => {
     if (projects !== "query" || typeof window === "undefined") return { slug: scopeSlug, page }

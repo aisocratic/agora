@@ -15,6 +15,7 @@ use JSON. API tokens have full board access; there are no per-card roles.
 | `PUT /api/board` | Authenticated additive backup import `{ board, revision }` |
 | `GET /api/cards/:id` | Authenticated card/comments/dependencies and current board revision |
 | `POST /api/cards/:id/comments` | Authenticated `{ body, revision }`; author assigned from the principal |
+| `POST /api/cards/:id/review` | Authenticated `{ verdict: "approved"\|"changes_requested", comment?, revision }` on a card in a review column; returns `{ board, revision }`. The reviewer is the principal; see [DATABASE.md](DATABASE.md#review-verdicts) |
 | `POST /api/cards/:id/dispatch` | Authenticated `{ revision, idempotencyKey: UUID }`; returns `{ board, revision, dispatch }`, 202 for pending/uncertain outcomes |
 | `GET /api/dispatch/:id` | Authenticated durable dispatch receipt `{ id, cardId, revision, status, message }` |
 

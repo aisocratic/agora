@@ -34,6 +34,10 @@ export const taskFieldsSchema = z.object({
   /* A measured outcome, e.g. { label: "Accounts found", current: 32, total: 100 }. */
   progress: goalProgressSchema.nullable().optional(),
   automerge: z.boolean().optional(),
+  /* A person's verdict on the card's last review and what they wrote with it
+     (lib/review.ts). Set through the review action, never through a draft. */
+  reviewStatus: z.enum(["approved", "changes_requested"]).nullable().optional(),
+  reviewFeedback: z.string().trim().min(1).max(10000).nullable().optional(),
   needsHumanReview: z.boolean().optional(),
   parentId: z.string().min(1).max(200).nullable().optional(),
   dependencies: z.array(z.string().min(1).max(200)).max(1000).optional(),

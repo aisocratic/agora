@@ -48,6 +48,12 @@ with `prUrl` and `column`. Comment with the change, test evidence and remaining
 review needs. Preserve assignee, dependencies, parent, gates and merge policy
 unless explicitly authorized to change them.
 
+A card a person sent back carries `reviewStatus: "changes_requested"` and the
+requested changes in `reviewFeedback` (also posted as a comment): address that
+feedback on the same PR before returning the card to review. Verdicts are a
+person's call; record one with `agora review ID approve|request-changes` only
+when the user asks you to.
+
 Review-stage tasks with a PR appear in readyToMerge. `mergeAllowed` expresses the
 card's automerge policy only; a PR URL or this classification is not approval.
 Merge automatically only when automerge is enabled, required tests/checks and

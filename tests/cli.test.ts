@@ -148,3 +148,47 @@ describe("agora board view", () => {
     expect(planTagsBoard(state).get("b-0000-0000")).toBe("ready")
   })
 })
+
+describe("agora review", () => {
+  const run = async (args: string[], input = "") => {
+    const { createServer } = await import("node:http")
+    const { spawn } = await import("node:child_process")
+    const requests: { method?: string; url?: string; body: string }[] = []
+    const server = createServer((request, response) => {
+      let body = ""
+      request.on("data", (chunk) => { body += chunk })
+      request.on("end", () => {
+        requests.push({ method: request.method, url: request.url, body })
+        response.setHeader("Content-Type", "application/json")
+        response.end(JSON.stringify(request.method === "GET" ? { board: { version: 1, cards: [] }, revision: 7 } : { revision: 8 }))
+      })
+    })
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+    const { port } = server.address() as { port: number }
+    try {
+      const child = spawn(process.execPath, ["cli/agora.mjs", "review", ...args], { env: { ...process.env, AGORA_URL: `http://127.0.0.1:${port}`, AGORA_TOKEN: "t".repeat(40), AGORA_CONFIG: "/nonexistent" } })
+      let stderr = ""
+      child.stderr.on("data", (chunk) => { stderr += chunk })
+      child.stdin.end(input)
+      const status = await new Promise<number | null>((resolve) => child.on("close", resolve))
+      return { status, stderr, requests }
+    } finally { server.close() }
+  }
+
+  it("approves a card at the board's revision, with an optional comment", async () => {
+    const { status, requests } = await run(["card-1", "approve", "--comment", "Ship it"])
+    expect(status).toBe(0)
+    expect(requests.at(-1)).toMatchObject({ method: "POST", url: "/api/cards/card-1/review" })
+    expect(JSON.parse(requests.at(-1)!.body)).toEqual({ verdict: "approved", comment: "Ship it", revision: 7 })
+  })
+
+  it("requests changes with the text from --comment or stdin, and requires it", async () => {
+    const piped = await run(["card-1", "request-changes", "--revision", "3"], "Cover the empty state")
+    expect(JSON.parse(piped.requests.at(-1)!.body)).toEqual({ verdict: "changes_requested", comment: "Cover the empty state", revision: 3 })
+    const missing = await run(["card-1", "request-changes"])
+    expect(missing.status).toBe(2)
+    expect(missing.stderr).toContain("Say what to change")
+    expect(missing.requests).toHaveLength(0)
+    expect((await run(["card-1", "reject"])).status).toBe(2)
+  })
+})

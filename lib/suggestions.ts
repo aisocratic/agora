@@ -1,8 +1,8 @@
 import { z } from "zod"
-import type { CardDraft } from "./board"
+import { NOT_IN_DRAFTS, type CardDraft } from "./board"
 import { taskFieldsSchema } from "./task-fields"
 import type { Workflow } from "./workflow"
-export const suggestionDraftSchema = taskFieldsSchema.omit({ comments: true }).extend({
+export const suggestionDraftSchema = taskFieldsSchema.omit(NOT_IN_DRAFTS).extend({
   title: z.string().trim().min(1).max(200), description: z.string().max(10000).default(""), column: z.string().min(1).max(100).optional(),
 }).strict()
 export const submissionSchema = z.object({ draft: suggestionDraftSchema, reason: z.string().max(4000).default("") }).strict()

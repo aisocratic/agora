@@ -49,6 +49,8 @@ import { SORT_OPTIONS, dueLabel, findScope, projectGroups, slugify, sortCards, w
 import { LogoTile } from "./cover-field"
 import { SubtreeProgress } from "./progress-ring"
 import { GoalProgressRow } from "./goal-progress"
+import { ReviewPanel, ReviewVerdict } from "./review-panel"
+import { reviewAction } from "../../lib/review"
 import { useMarqueeSelect } from "./use-marquee-select"
 import { dragGroupOf, groupMoveActions } from "../../lib/board-drop"
 import { subtreeProgress, type SubtaskProgress } from "../../lib/subtasks"
@@ -79,9 +81,9 @@ const collisionDetection: CollisionDetection = (args) => {
       : rectIntersection(args).filter((hit) => hit.id !== args.active.id)
 }
 
-function makeStore() {
+function makeStore(workflow: Workflow) {
   try {
-    return new BoardStore(browserStorage(window.localStorage, window))
+    return new BoardStore(browserStorage(window.localStorage, window), workflow)
   } catch {
     return new BoardStore({
       read: () => {
@@ -91,7 +93,7 @@ function makeStore() {
         throw new Error("Storage unavailable")
       },
       subscribe: () => () => {},
-    })
+    }, workflow)
   }
 }
 
@@ -143,9 +145,11 @@ function CardEditor({
   onClose,
   board,
   onComment,
+  onReview,
   onDispatch,
 }: {
   onComment?: (body: string) => Promise<void>
+  onReview?: (verdict: "approved" | "changes_requested", feedback: string) => Promise<void>
   onDispatch?: (key: string) => Promise<string>
   board: import("../../lib/board").BoardData
   card?: BoardCard
@@ -242,6 +246,11 @@ function CardEditor({
           </button>
         </div>
       </form>
+      {(() => {
+        const saved = card && board.cards.find((item) => item.id === card.id)
+        return saved && !saved.archived && onReview && workflow.columns.find((item) => item.id === saved.column)?.role === "review"
+          ? <ReviewPanel card={saved} onReview={onReview} /> : null
+      })()}
       {card && <section className="agora-comments" aria-label="Card comments">
         <h3>Comments</h3>
         {(board.cards.find((item) => item.id === card.id)?.comments ?? []).map((item) => <article key={item.id}><p><b>{item.author}</b> · <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time></p><p style={{ whiteSpace: "pre-wrap" }}>{item.body}</p></article>)}
@@ -386,6 +395,7 @@ function SortableCard({
         {card.model && <span className="agora-model" title={`Model: ${card.model}`}>{card.model}</span>}
         {selection.enabled && card.prUrl && <a className="agora-card-pr" href={card.prUrl} target="_blank" rel="noreferrer" title="Open pull request"><GitPullRequest size={12} />#{card.prUrl.split("/").filter(Boolean).at(-1)}</a>}
         <span className="agora-card-flags">
+          <ReviewVerdict card={card} />
           <button className="agora-flag" data-active={card.needsHumanReview} aria-label={`Toggle human review for ${card.title}`} aria-pressed={!!card.needsHumanReview} onClick={() => onAction({ type: "edit", id: card.id, draft: { ...card, needsHumanReview: !card.needsHumanReview } })}><UserCheck size={13} /></button>
           <button className="agora-flag" data-active={card.automerge} aria-label={`Toggle automatic merge for ${card.title}`} aria-pressed={!!card.automerge} onClick={() => onAction({ type: "edit", id: card.id, draft: { ...card, automerge: !card.automerge } })}><GitMerge size={13} /></button>
           {display.assignee && (selection.enabled
@@ -578,7 +588,7 @@ const TABS = [
   { page: "list", view: "list", label: "List", Icon: List },
 ] as const
 export function Board({ store: providedStore, mode = "local", workflow: providedWorkflow = DEFAULT_WORKFLOW, workspace = false, workspaceNav, workspaceActions, preferencesKey, scopeSlug, projectHref, projectsHref = "/", page, pageHref, scopeHref }: { workspaceNav?: ReactNode; workspaceActions?: ReactNode; store?: BoardController; mode?: "local" | "shared"; workflow?: Workflow; workspace?: boolean; preferencesKey?: string; scopeSlug?: string; projectHref?: (slug: string) => string; projectsHref?: string; page?: WorkspacePage; pageHref?: (page: WorkspacePage) => string; scopeHref?: (slug?: string) => string }) {
-  const [store] = useState<BoardController>(() => providedStore ?? (mode === "shared" ? new RemoteBoardStore() : makeStore()))
+  const [store] = useState<BoardController>(() => providedStore ?? (mode === "shared" ? new RemoteBoardStore() : makeStore(providedWorkflow)))
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot)
   useEffect(() => store.connect(), [store])
   const [editor, setEditor] = useState<Editor | null>(null)
@@ -739,7 +749,7 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
         const action: BoardAction = command.type === "archive" ? { type: "archive", id: card.id }
           : command.type === "move" ? { type: "move", id: card.id, column: command.column, position: Number.MAX_SAFE_INTEGER }
           : { type: "edit", id: card.id, draft: { ...card, ...command.patch } }
-        next = updateBoard(next, action)
+        next = updateBoard(next, action, undefined, workflow)
       }
       await store.replace(JSON.stringify(next))
       setMessage(`Updated ${targets.length} selected cards.`)
@@ -1095,6 +1105,12 @@ export function Board({ store: providedStore, mode = "local", workflow: provided
               await store.dispatch({ type: "comment", id: editor.card!.id, comment: { id: crypto.randomUUID(), body, author: "You", createdAt: new Date().toISOString() } }, editor.revision)
               setEditor({ ...editor, revision: store.getSnapshot().revision })
             } catch (error) { setEditor({ ...editor, revision: store.getSnapshot().revision }); throw error }
+          } : undefined}
+          onReview={editor.card ? async (verdict, feedback) => {
+            const latest = store.getSnapshot().board
+            await store.dispatch(reviewAction(latest, editor.card!.id, verdict, feedback, workflow, "You"))
+            setMessage(verdict === "approved" ? "Approved." : "Changes requested.")
+            setEditor(null)
           } : undefined}
           onDispatch={editor.card && store.launch ? async (key) => {
             const result = await store.launch!(editor.card!.id, key, editor.revision)

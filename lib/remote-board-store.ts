@@ -61,7 +61,8 @@ export class RemoteBoardStore implements BoardController {
     } finally { this.publish({ pending: false }) }
   }
   dispatch = async (action: BoardAction, revision?: number) => {
-    if (action.type === "comment") await this.mutate("POST", { body: action.comment.body }, revision, `/api/cards/${encodeURIComponent(action.id)}/comments`)
+    if (action.type === "review") await this.mutate("POST", { verdict: action.verdict, ...(action.feedback ? { comment: action.feedback } : {}) }, revision, `/api/cards/${encodeURIComponent(action.id)}/review`)
+    else if (action.type === "comment") await this.mutate("POST", { body: action.comment.body }, revision, `/api/cards/${encodeURIComponent(action.id)}/comments`)
     else if (action.type === "create" || action.type === "edit") await this.mutate("POST", { action: { ...action, draft: draftOf(action.draft) } }, revision)
     else await this.mutate("POST", { action }, revision)
   }

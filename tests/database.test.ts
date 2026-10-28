@@ -6,6 +6,7 @@ import { migrate } from "../lib/server/migrations"
 import { ConflictError, mutateBoard, readBoard, transactBoard } from "../lib/server/board-repository"
 import { GET, POST, PUT } from "../app/api/board/route"
 import { POST as comment } from "../app/api/cards/[id]/comments/route"
+import { POST as review } from "../app/api/cards/[id]/review/route"
 
 const databaseUrl = process.env.TEST_DATABASE_URL
 describe.skipIf(!databaseUrl)("real Postgres shared board", () => {
@@ -146,6 +147,29 @@ describe.skipIf(!databaseUrl)("real Postgres shared board", () => {
       await expect(pool.query("UPDATE cards SET metadata = jsonb_set(metadata, '{progress}', $1::jsonb) WHERE id = 'goal'", [JSON.stringify(bad)])).rejects.toThrow("cards_progress_check")
     await pool.query("UPDATE cards SET metadata = jsonb_set(metadata, '{progress}', $1::jsonb) WHERE id = 'goal'", [JSON.stringify(progress)])
     expect((await readBoard(pool)).board.cards.find((card) => card.id === "goal")?.progress).toEqual(progress)
+  })
+  it("records review verdicts over HTTP with the reviewer as author, and only for cards in review", async () => {
+    const send = (id: string, body: unknown) => review(new Request(`http://localhost/api/cards/${id}/review`, { method: "POST", headers: { "Content-Type": "application/json", Origin: "http://localhost" }, body: JSON.stringify(body) }), { params: Promise.resolve({ id }) })
+    let state = await readBoard(pool)
+    state = await mutateBoard({ type: "create", id: "reviewed", draft: { ...draft, column: "review", prUrl: "https://github.com/example/repo/pull/7" } }, state.revision, pool)
+    expect((await send("goal", { verdict: "approved", revision: state.revision })).status).toBe(400)
+    expect((await send("reviewed", { verdict: "changes_requested", revision: state.revision })).status).toBe(400)
+    expect((await send("reviewed", { verdict: "maybe", revision: state.revision })).status).toBe(400)
+    expect((await send("reviewed", { verdict: "approved", revision: 0 })).status).toBe(409)
+    const approved = await send("reviewed", { verdict: "approved", comment: "Ship it", revision: state.revision })
+    expect(approved.status).toBe(200)
+    let card = (await approved.json()).board.cards.find((item: { id: string }) => item.id === "reviewed")
+    expect(card).toMatchObject({ column: "review", reviewStatus: "approved", reviewFeedback: "Ship it" })
+    expect(card.comments.at(-1)).toMatchObject({ body: "Approved: Ship it", author: "you" })
+    state = await readBoard(pool)
+    const sentBack = await (await send("reviewed", { verdict: "changes_requested", comment: "Cover the empty state", revision: state.revision })).json()
+    card = sentBack.board.cards.find((item: { id: string }) => item.id === "reviewed")
+    expect(card).toMatchObject({ column: "todo", reviewStatus: "changes_requested", reviewFeedback: "Cover the empty state" })
+    expect(card.comments.map((item: { body: string }) => item.body)).toEqual(["Approved: Ship it", "Changes requested: Cover the empty state"])
+    // Back in review, it needs a fresh verdict; the feedback stays for context.
+    state = await mutateBoard({ type: "move", id: "reviewed", column: "review", position: 0 }, sentBack.revision, pool)
+    expect(state.board.cards.find((item) => item.id === "reviewed")).toMatchObject({ reviewStatus: null, reviewFeedback: "Cover the empty state" })
+    await expect(pool.query(`UPDATE cards SET metadata = metadata || '{"reviewStatus":"rejected"}' WHERE id = 'reviewed'`)).rejects.toThrow("cards_review_check")
   })
   it("rejects cross-origin mutations", async () => {
     const response = await POST(new Request("http://localhost/api/board", { method: "POST", headers: { Origin: "https://attacker.example", "Content-Type": "application/json" }, body: "{}" }))

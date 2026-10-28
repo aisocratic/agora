@@ -888,3 +888,18 @@ a.agora-card-project:hover { color: var(--foreground); }
 .agora-goal-editor label { display: block; margin-bottom: 4px; font-size: 12px; }
 .agora-goal-editor input { width: 100%; }
 .agora-goal-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Review: the verdict on a card, and the panel on a card in review. */
+.agora-review-verdict { display: inline-flex; align-items: center; gap: 6px; }
+.agora-review-verdict[data-verdict="approved"] { color: #16a34a; }
+.agora-review-verdict[data-verdict="changes_requested"] { color: #d97706; }
+p.agora-review-verdict { margin: 0; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+p.agora-review-verdict svg { flex-shrink: 0; }
+.agora-review-panel { display: grid; gap: 8px; margin: 12px 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: color-mix(in srgb, var(--muted) 30%, transparent); }
+.agora-review-panel header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.agora-review-panel h3 { margin: 0; font: 11px var(--font-code); color: var(--muted-foreground); }
+.agora-review-panel header a { display: inline-flex; align-items: center; gap: 4px; font: 11px var(--font-code); color: var(--muted-foreground); text-decoration: none; }
+.agora-review-panel header a:hover { color: var(--foreground); }
+.agora-review-panel textarea { width: 100%; min-height: 64px; resize: vertical; }
+.agora-review-panel .agora-dialog-actions { margin: 0; }
+.agora-review-panel .agora-btn svg { margin-right: 2px; }

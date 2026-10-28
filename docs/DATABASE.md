@@ -62,6 +62,7 @@ is the integration point for authentication and API tokens.
 | `PUT /api/board` | `{ board, revision }` | Add missing card IDs, preserve existing IDs; updated state |
 | `GET /api/cards/:id` | — | `{ card, revision }`, or 404 |
 | `POST /api/cards/:id/comments` | `{ body, revision }` | Updated board with a server-attributed comment, status 201 |
+| `POST /api/cards/:id/review` | `{ verdict, comment?, revision }` | Updated `{ board, revision }` with the verdict applied |
 
 The read envelope includes the [planning classifications](PLANNING.md). Its ETag
 combines board revision and workflow configuration, so configuration-only changes
@@ -104,6 +105,30 @@ be cleared with `null`; dependencies can be cleared with `[]`. Omitted optional 
 Parent/dependency IDs must exist, cannot refer to the card itself, and each graph
 must be acyclic. Comments are `{ id, body, author, createdAt }`; clients add them
 through the dedicated comments endpoint.
+
+### Review verdicts
+
+A card in a column whose role is `review` takes a person's verdict through
+`POST /api/cards/:id/review` with `{ "verdict": "approved", "revision": N }` or
+`{ "verdict": "changes_requested", "comment": "What to change", "revision": N }`
+(a comment is required to request changes and optional to approve; at most
+10,000 characters). The card then carries `reviewStatus` (`approved`,
+`changes_requested` or `null`) and `reviewFeedback` (the comment, or `null`):
+
+- Approved with a `prUrl`: the card stays in review for the merge.
+- Approved without one: it moves to the first `done` column, or stays where no
+  done column is configured.
+- Changes requested: it moves to the end of the first `todo` column, to be
+  reworked using `reviewFeedback`.
+
+Each verdict is also posted as a comment by the reviewer ("Approved: …",
+"Changes requested: …"), so the comment log keeps the review history. A card
+that enters a review column again (move or edit) has its `reviewStatus` reset
+to `null` for a fresh review; `reviewFeedback` is kept for context. Drafts
+cannot set either field, and a card outside review answers 400. Verdicts do not
+change planning: `readyToMerge`, gates and waves ignore them. Migration
+`006_card_review.sql` constrains the stored values. The AI Socratic website's
+board stores the same verdicts as `review_status` and `review_feedback`.
 
 Example against a freshly migrated local board:
 

@@ -1,12 +1,12 @@
 import { z, ZodError } from "zod"
-import { BoardValidationError } from "../board"
+import { BoardValidationError, NOT_IN_DRAFTS } from "../board"
 import { taskFieldsSchema } from "../task-fields"
 import { ConflictError } from "./board-repository"
 import { HttpError } from "./authorization"
 
 const id = z.string().min(1).max(200)
 const column = z.string().min(1).max(100)
-const draft = taskFieldsSchema.omit({ comments: true }).extend({
+const draft = taskFieldsSchema.omit(NOT_IN_DRAFTS).extend({
   title: z.string().trim().min(1).max(200),
   description: z.string().max(10000), column,
 }).strict()

@@ -80,6 +80,6 @@ export async function mutateBoard(action: BoardAction, expectedRevision: number,
   const workflow = await getPublicWorkflow()
   return transactBoard(expectedRevision, (board) => {
     validateConfiguredAction(board, action, workflow)
-    return updateBoard(board, action)
+    return updateBoard(board, action, undefined, workflow)
   }, pool)
 }

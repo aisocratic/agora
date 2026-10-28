@@ -52,7 +52,8 @@ export class BoardStore {
   private snapshot = INITIAL
   private listeners = new Set<() => void>()
   private rawBackup: string | null = null
-  constructor(private storage: BoardStorage) {}
+  /* With the workflow, moves into a review column clear the previous verdict. */
+  constructor(private storage: BoardStorage, private workflow?: Workflow) {}
   getSnapshot = () => this.snapshot
   getServerSnapshot = () => INITIAL
   subscribe = (listener: () => void) => {
@@ -124,7 +125,7 @@ export class BoardStore {
         }
       }
     }
-    const next = updateBoard(board, action)
+    const next = updateBoard(board, action, undefined, this.workflow)
     try {
       if (readFailed) throw new Error("Cannot safely write unreadable storage")
       this.storage.write(JSON.stringify(next))

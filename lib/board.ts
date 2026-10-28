@@ -1,4 +1,4 @@
-import { DEFAULT_WORKFLOW } from "./workflow"
+import { DEFAULT_WORKFLOW, type Workflow } from "./workflow"
 import { taskFieldsSchema, type TaskFields, type CardComment } from "./task-fields"
 
 export class BoardValidationError extends Error {}
@@ -16,18 +16,22 @@ export type BoardCard = TaskFields & {
 }
 export type BoardData = { version: 1; cards: BoardCard[] }
 export const EMPTY_BOARD: BoardData = { version: 1, cards: [] }
-export type CardDraft = Pick<BoardCard, "title" | "description" | "column"> & Omit<TaskFields, "comments">
+export type CardDraft = Pick<BoardCard, "title" | "description" | "column"> & Omit<TaskFields, "comments" | "reviewStatus" | "reviewFeedback">
+/* Fields a draft never sets: comments and review verdicts have their own actions. */
+export const NOT_IN_DRAFTS = { comments: true, reviewStatus: true, reviewFeedback: true } as const
 export type BoardAction =
   | { type: "create"; id: string; draft: CardDraft }
   | { type: "edit"; id: string; draft: CardDraft }
   | { type: "move"; id: string; column: ColumnId; position: number }
   | { type: "archive" | "restore" | "delete"; id: string }
   | { type: "comment"; id: string; comment: CardComment }
+  /* A verdict on a card in review; build it with reviewAction (lib/review.ts). */
+  | { type: "review"; id: string; verdict: "approved" | "changes_requested"; feedback: string | null; column: ColumnId; comment: CardComment }
 
 /* The fields a create or edit draft carries. The board UI often edits by
    spreading a whole card; the shared API's drafts are strict, so a client
    sends only these. */
-const DRAFT_KEYS = new Set<string>(["title", "description", "column", ...Object.keys(taskFieldsSchema.shape).filter((key) => key !== "comments")])
+const DRAFT_KEYS = new Set<string>(["title", "description", "column", ...Object.keys(taskFieldsSchema.omit(NOT_IN_DRAFTS).shape)])
 export function draftOf(draft: CardDraft): CardDraft {
   return Object.fromEntries(Object.entries(draft).filter(([key]) => DRAFT_KEYS.has(key))) as CardDraft
 }
@@ -125,17 +129,27 @@ function validateDraft(draft: CardDraft): CardDraft {
   if (!title) throw new BoardValidationError("Give the card a title.")
   if (title.length > 200 || draft.description.length > 10000 || !isColumn(draft.column))
     throw new BoardValidationError("Check the card fields and try again.")
-  return { ...taskFieldsSchema.omit({ comments: true }).parse(draft), title, description: draft.description, column: draft.column }
+  return { ...taskFieldsSchema.omit(NOT_IN_DRAFTS).parse(draft), title, description: draft.description, column: draft.column }
 }
 
+/* With the workflow, a card entering a review column also loses its previous
+   verdict (lib/review.ts). */
 export function updateBoard(
   board: BoardData,
   action: BoardAction,
   now = new Date().toISOString(),
+  workflow?: Workflow,
 ): BoardData {
-  const next = applyAction(board, action, now)
+  let next = applyAction(board, action, now)
+  if (workflow && action.type !== "review") next = clearVerdicts(board, next, workflow)
   validateRelations(next)
   return next
+}
+function clearVerdicts(before: BoardData, after: BoardData, workflow: Workflow): BoardData {
+  const previous = new Map(before.cards.map((card) => [card.id, card.column]))
+  const review = new Set(workflow.columns.filter((column) => column.role === "review").map((column) => column.id))
+  if (!after.cards.some((card) => card.reviewStatus && review.has(card.column) && previous.get(card.id) !== card.column)) return after
+  return { ...after, cards: after.cards.map((card) => card.reviewStatus && review.has(card.column) && previous.get(card.id) !== card.column ? { ...card, reviewStatus: null } : card) }
 }
 
 function applyAction(board: BoardData, action: BoardAction, now: string): BoardData {
@@ -168,6 +182,12 @@ function applyAction(board: BoardData, action: BoardAction, now: string): BoardD
   if (action.type === "comment") {
     return { ...board, cards: board.cards.map((item) => item.id === card.id
       ? { ...item, comments: [...(item.comments ?? []), action.comment], updatedAt: now } : item) }
+  }
+  if (action.type === "review") {
+    if (card.archived || !isColumn(action.column)) throw new BoardValidationError("Only a card in review can be approved or sent back.")
+    const reviewed = { ...card, reviewStatus: action.verdict, reviewFeedback: action.feedback, comments: [...(card.comments ?? []), action.comment], updatedAt: now }
+    if (card.column === action.column) return { ...board, cards: board.cards.map((item) => item.id === card.id ? reviewed : item) }
+    return { ...board, cards: [...board.cards.filter((item) => item.id !== card.id), { ...reviewed, column: action.column }] }
   }
   if (action.type === "move") {
     if (!isColumn(action.column) || card.archived) throw new BoardValidationError("This card cannot be moved.")
